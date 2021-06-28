@@ -27,6 +27,18 @@
     <ClCompile Include="RenderPass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Framebuffers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="commandPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="commandBuffers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="compile.bat">
@@ -53,6 +65,21 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderPass.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Framebuffers.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commandPool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commandBuffers.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Helper.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

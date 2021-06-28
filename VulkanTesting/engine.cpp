@@ -20,9 +20,13 @@
 //Class
 #include "pipeline.h"
 #include "RenderPass.h"
+#include "Framebuffers.h"
+#include "commandPool.h"
+#include "commandBuffers.h"
+#include "Renderer.h"
 
 
-//next thing to ddo is SWAP CHAIN -- RETRIEVING THE SWAP CHAIN IMAGES == subheading
+//next thing to do -- DRAWING CHAPTER BEGIN == subheading
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -41,6 +45,7 @@ struct QueueFamilyIndices {
 		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
+
 
 class vulkanEngine {
 public:
@@ -71,6 +76,10 @@ private:
 	//Instance class
 	std::unique_ptr<Pipeline> pipeline;
 	std::unique_ptr<RenderPass> renderPass;
+	std::unique_ptr<Framebuffers> frameBuffers;
+	std::unique_ptr<CommandPool> commandPool;
+	std::unique_ptr<CommandBuffers> commandBuffers;
+	std::unique_ptr<Renderer> renderer;
 
 	void initWindow() {
 		glfwInit();
@@ -86,17 +95,43 @@ private:
 		createLogicalDevice();
 		createSwapChain();
 		createImageViews();
-		pipeline = std::make_unique<Pipeline>(logicalDevice, swapChainExtent);
-		renderPass = std::make_unique<RenderPass>(logicalDevice, pipeline->getPipelineLayout(), swapChainImageFormat);
+		renderPass = std::make_unique<RenderPass>(logicalDevice, swapChainImageFormat);
 		renderPass->createRenderPass();
+
+		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->getRenderPass(), swapChainExtent);
 		pipeline->createGraphicsPipeline("shaders/vert.spv", "shaders/frag.spv");
+
+		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->getRenderPass(), swapChainExtent);
+		frameBuffers->createFramebuffers();
+
+		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
+		commandPool->createCommandPool();
+
+		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool());
+		commandBuffers->createCommandBuffers();
+
+		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue);
+		renderer->createSemaphore();
+
 	}
 	void mainloop() {
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
+			renderer->drawFrame();
 		}
 	}
 	void cleanup() {
+		vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore(), nullptr);
+		vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore(), nullptr);
+
+		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
+		for (auto framebuffer : frameBuffers->getSwapChainFramebuffers()) {
+			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+		}
+
+		vkDestroyPipeline(logicalDevice, pipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, pipeline->getPipelineLayout(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->getRenderPass(), nullptr);
 		//Destroy swapchain image views

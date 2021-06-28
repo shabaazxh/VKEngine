@@ -6,13 +6,12 @@
 
 class RenderPass {
 public:
-	RenderPass(VkDevice device, VkPipelineLayout pipelineLayout, VkFormat swapChainImageFormat);
+	RenderPass(VkDevice device, VkFormat swapChainImageFormat);
 	void createRenderPass();
 
 	VkRenderPass getRenderPass() { return renderPass; }
 
 private:
-	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
 	VkFormat swapChainImageFormat;
 	VkDevice device;
