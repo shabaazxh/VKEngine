@@ -122,17 +122,15 @@ private:
 			renderer->drawFrame();
 		}
 	}
-	void cleanup() {
-		for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
-			vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore()[i], nullptr);
-			vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore()[i], nullptr);
-			vkDestroyFence(logicalDevice, renderer->getFences()[i], nullptr);
-		}
-
+	void cleanupSwapChain() {
 		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
 		for (auto framebuffer : frameBuffers->getSwapChainFramebuffers()) {
 			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 		}
+
+		//Free command buffers 
+		vkFreeCommandBuffers(logicalDevice, commandPool->getCommandPool(), static_cast<uint32_t>(commandBuffers->getCommandBuffers
+			().size()), commandBuffers->getCommandBuffers().data());
 
 		vkDestroyPipeline(logicalDevice, pipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, pipeline->getPipelineLayout(), nullptr);
@@ -143,6 +141,17 @@ private:
 		}
 		//Destroy the swapchain
 		vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+	}
+
+	void cleanup() {
+		cleanupSwapChain();
+
+		for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
+			vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore()[i], nullptr);
+			vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore()[i], nullptr);
+			vkDestroyFence(logicalDevice, renderer->getFences()[i], nullptr);
+		}
+
 		//Destroy the logical device
 		vkDestroyDevice(logicalDevice, nullptr);
 		//Destroy surface to window
@@ -153,6 +162,18 @@ private:
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
+
+	}
+
+	void recreateSwapChain() {
+		vkDeviceWaitIdle(logicalDevice);
+
+		createSwapChain();
+		createImageViews();
+		renderPass->createRenderPass();
+		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
+		frameBuffers->createFramebuffers();
+		commandBuffers->createCommandBuffers();
 
 	}
 
