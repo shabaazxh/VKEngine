@@ -45,6 +45,8 @@ void Renderer::drawFrame() {
 	presentInfo.pImageIndices = &imageIndex;
 
 	vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	vkQueueWaitIdle(presentQueue); //wait for work to finish before submitting 
 }
 
 void Renderer::createSemaphore() {

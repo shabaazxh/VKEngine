@@ -26,7 +26,7 @@
 #include "Renderer.h"
 
 
-//next thing to do -- DRAWING CHAPTER BEGIN == subheading
+//next thing to do -- FRAMES IN FLIGHT (RENDERNG AND PRESENTATION) == subheading
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -99,7 +99,7 @@ private:
 		renderPass->createRenderPass();
 
 		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->getRenderPass(), swapChainExtent);
-		pipeline->createGraphicsPipeline("shaders/vert.spv", "shaders/frag.spv");
+		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
 
 		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->getRenderPass(), swapChainExtent);
 		frameBuffers->createFramebuffers();
@@ -109,7 +109,7 @@ private:
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
 		commandPool->createCommandPool();
 
-		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool());
+		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline());
 		commandBuffers->createCommandBuffers();
 
 		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue);
