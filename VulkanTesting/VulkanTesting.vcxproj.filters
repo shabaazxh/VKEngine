@@ -56,6 +56,9 @@
     <None Include="shaders\vert.spv">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="compute.comp">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">

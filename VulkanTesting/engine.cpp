@@ -100,20 +100,20 @@ private:
 
 		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->getRenderPass(), swapChainExtent);
 		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
+		//pipeline->createComputePipeline("compute.comp.spv");
 
 		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->getRenderPass(), swapChainExtent);
 		frameBuffers->createFramebuffers();
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
 		commandPool->createCommandPool();
 
-		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline());
+		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), pipeline->getComputePipeline());
 		commandBuffers->createCommandBuffers();
 
-		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue);
-		renderer->createSemaphore();
+		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages);
+		renderer->createSyncObjects();
 
 	}
 	void mainloop() {
@@ -123,8 +123,11 @@ private:
 		}
 	}
 	void cleanup() {
-		vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore(), nullptr);
-		vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore(), nullptr);
+		for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
+			vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore()[i], nullptr);
+			vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore()[i], nullptr);
+			vkDestroyFence(logicalDevice, renderer->getFences()[i], nullptr);
+		}
 
 		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
 		for (auto framebuffer : frameBuffers->getSwapChainFramebuffers()) {

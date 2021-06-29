@@ -149,3 +149,38 @@ void Pipeline::createGraphicsPipeline(std::string vertFile, std::string fragFile
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	
 }
+
+void Pipeline::createComputePipeline(std::string computeFile) {
+
+	Shader shaderHelper(device);
+	auto computeShaderCode = shaderHelper.readFile(computeFile);
+
+	VkShaderModule computeModule = shaderHelper.createShaderModule(computeShaderCode);
+
+	VkPipelineShaderStageCreateInfo computeShaderInfo{};
+	computeShaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	computeShaderInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+	computeShaderInfo.module = computeModule;
+	computeShaderInfo.pName = "main";
+
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 0; // Optional
+	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+
+	VkComputePipelineCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+	createInfo.stage = computeShaderInfo;
+	createInfo.layout = pipelineLayout;
+
+	if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &computePipeline) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create computer pipeline!");
+	}
+
+}

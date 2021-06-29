@@ -1,12 +1,13 @@
 #include "commandBuffers.h"
 
-CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline) {
+CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline) {
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
 	this->commandPool = commandPool;
 	this->renderPass = renderPass;
 	this->swapChainExtent = swapChainExtent;
 	this->graphicsPipeline = graphicsPipeline;
+	this->computePipeline = computePipeline;
 }
 
 
@@ -46,6 +47,11 @@ void CommandBuffers::createCommandBuffers() {
 
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+		/* COMPUTE PIPELINE */
+		//vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+		//vkCmdDispatch(commandBuffers[i], 256,1,1);
+
 		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);

@@ -6,7 +6,7 @@
 
 class CommandBuffers {
 public:
-	CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline);
+	CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline);
 	void createCommandBuffers();
 
 	std::vector<VkCommandBuffer> getCommandBuffers() { return commandBuffers; }
@@ -20,5 +20,6 @@ private:
 	VkRenderPass renderPass;
 	VkExtent2D swapChainExtent;
 	VkPipeline graphicsPipeline;
+	VkPipeline computePipeline;
 
 };
