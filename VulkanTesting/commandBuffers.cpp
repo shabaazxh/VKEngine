@@ -1,6 +1,7 @@
 #include "commandBuffers.h"
+#include <iostream>
 
-CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline) {
+CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer) {
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
 	this->commandPool = commandPool;
@@ -8,11 +9,11 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->swapChainExtent = swapChainExtent;
 	this->graphicsPipeline = graphicsPipeline;
 	this->computePipeline = computePipeline;
+	this->renderingBuffer = renderingBuffer;
 }
 
 
 void CommandBuffers::createCommandBuffers() {
-	
 	commandBuffers.resize(swapChainFramebuffers.size());
 
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -48,11 +49,11 @@ void CommandBuffers::createCommandBuffers() {
 		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-		/* COMPUTE PIPELINE */
-		//vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
-		//vkCmdDispatch(commandBuffers[i], 256,1,1);
+		VkBuffer vertexBuffers[] = { renderingBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-		vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getTriangleData().size()), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -63,3 +64,7 @@ void CommandBuffers::createCommandBuffers() {
 	}
 
 }
+
+/* COMPUTE PIPELINE */
+		//vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+		//vkCmdDispatch(commandBuffers[i], 256,1,1);

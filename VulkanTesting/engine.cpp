@@ -24,9 +24,11 @@
 #include "commandPool.h"
 #include "commandBuffers.h"
 #include "Renderer.h"
+#include "Object.h"
+#include "Buffer.h"
 
 
-//next thing to do -- FRAMES IN FLIGHT (RENDERNG AND PRESENTATION) == subheading
+//next thing to do -- VERTEX BUFFERS -- Staging buffer == 
 const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -80,7 +82,9 @@ private:
 	std::unique_ptr<CommandPool> commandPool;
 	std::unique_ptr<CommandBuffers> commandBuffers;
 	std::unique_ptr<Renderer> renderer;
-
+	std::unique_ptr<Buffer> buffers;
+	std::unique_ptr<Object> objectData;
+	
 	void initWindow() {
 		glfwInit();
 
@@ -109,7 +113,11 @@ private:
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
 		commandPool->createCommandPool();
 
-		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), pipeline->getComputePipeline());
+		objectData = std::make_unique<Object>();
+		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice);
+		buffers->createVertexBuffer();
+
+		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer());
 		commandBuffers->createCommandBuffers();
 
 		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages);
@@ -146,6 +154,9 @@ private:
 	void cleanup() {
 		cleanupSwapChain();
 
+		vkDestroyBuffer(logicalDevice, buffers->getVertexBuffer(), nullptr);
+		vkFreeMemory(logicalDevice, buffers->getVertexBufferMemory(), nullptr);
+
 		for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
 			vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore()[i], nullptr);
 			vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore()[i], nullptr);
@@ -157,7 +168,7 @@ private:
 		//Destroy surface to window
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		//Destroy Vulkan instance
-;		vkDestroyInstance(instance, nullptr);
+		vkDestroyInstance(instance, nullptr);
 
 
 		glfwDestroyWindow(window);

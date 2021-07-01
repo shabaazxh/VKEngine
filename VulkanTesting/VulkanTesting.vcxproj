@@ -19,10 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="commandBuffers.cpp" />
     <ClCompile Include="commandPool.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="Framebuffers.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
@@ -37,10 +39,12 @@
     <None Include="shaders\vert.spv" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Buffer.h" />
     <ClInclude Include="commandBuffers.h" />
     <ClInclude Include="commandPool.h" />
     <ClInclude Include="Framebuffers.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />

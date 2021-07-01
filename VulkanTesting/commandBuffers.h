@@ -3,15 +3,20 @@
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <vector>
+#include <memory>
+#include "Buffer.h"
+#include "Object.h"
 
 class CommandBuffers {
 public:
-	CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline);
+	CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer);
 	void createCommandBuffers();
 
 	std::vector<VkCommandBuffer> getCommandBuffers() { return commandBuffers; }
 
 private:
+	//std::unique_ptr<Buffer> GameObjectBuffer = std::make_unique<Buffer>(device, physicalDevice);
+	std::unique_ptr<Object> GameObjectVertices = std::make_unique<Object>();
 
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -21,5 +26,9 @@ private:
 	VkExtent2D swapChainExtent;
 	VkPipeline graphicsPipeline;
 	VkPipeline computePipeline;
+	VkPhysicalDevice physicalDevice;
 
+	VkBuffer renderingBuffer;
+
+	
 };

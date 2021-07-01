@@ -3,6 +3,8 @@
 #include <vector>
 #include "shader.h"
 #include <vulkan/vulkan.h>
+#include "Object.h"
+#include <memory>
 
 class Pipeline {
 public:
@@ -21,4 +23,5 @@ private:
 	VkRenderPass renderPass;
 	VkPipeline graphicsPipeline;
 	VkPipeline computePipeline;
+	std::unique_ptr<Object> GameObject = std::make_unique<Object>();
 };
