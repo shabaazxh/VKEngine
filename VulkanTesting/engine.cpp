@@ -114,7 +114,7 @@ private:
 		commandPool->createCommandPool();
 
 		objectData = std::make_unique<Object>();
-		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice);
+		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue);
 		buffers->createVertexBuffer();
 
 		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer());
