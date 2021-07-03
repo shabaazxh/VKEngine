@@ -8,7 +8,7 @@
 
 class Pipeline {
 public:
-	Pipeline(VkDevice device, VkRenderPass renderPass,VkExtent2D swapChainExtent);
+	Pipeline(VkDevice device, VkRenderPass renderPass,VkExtent2D swapChainExtent, VkDescriptorSetLayout descriptorSetLayout);
 	void createGraphicsPipeline(std::string vertFile, std::string fragFile);
 	VkPipelineLayout getPipelineLayout() { return pipelineLayout; }
 	VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
@@ -23,5 +23,7 @@ private:
 	VkRenderPass renderPass;
 	VkPipeline graphicsPipeline;
 	VkPipeline computePipeline;
+	VkDescriptorSetLayout descriptorSetLayout;
+
 	std::unique_ptr<Object> GameObject = std::make_unique<Object>();
 };

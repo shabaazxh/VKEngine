@@ -1,7 +1,7 @@
 #include "commandBuffers.h"
 #include <iostream>
 
-CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer) {
+CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer, VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSet> descriptorSets) {
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
 	this->commandPool = commandPool;
@@ -10,6 +10,8 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->graphicsPipeline = graphicsPipeline;
 	this->computePipeline = computePipeline;
 	this->renderingBuffer = renderingBuffer;
+	this->pipelineLayout = pipelineLayout;
+	this->descriptorSets = descriptorSets;
 }
 
 
@@ -51,6 +53,7 @@ void CommandBuffers::createCommandBuffers() {
 
 		VkBuffer vertexBuffers[] = { renderingBuffer };
 		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getTriangleData().size()), 1, 0, 0);

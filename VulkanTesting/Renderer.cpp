@@ -1,19 +1,24 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, std::vector<VkCommandBuffer> commandBuffers, VkQueue graphicsQueue, VkQueue presentQueue, std::vector<VkImage> swapChainImages) {
+Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, std::vector<VkCommandBuffer> commandBuffers, VkQueue graphicsQueue, VkQueue presentQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::vector<VkDeviceMemory> uniformBufferMemory) {
 	this->device = device;
 	this->swapChain = swapChain;
 	this->commandBuffers = commandBuffers;
 	this->graphicsQueue = graphicsQueue;
 	this->presentQueue = presentQueue;
 	this->swapChainImages = swapChainImages;
-
+	this->swapChainExtent = swapChainExtent;
+	this->physicalDevice = physicalDevice;
+	this->commandPool = commandPool;
+	this->uniformBufferMemory = uniformBufferMemory;
 }
 
-void Renderer::drawFrame() {
-	uint32_t imageIndex;
+void Renderer::drawFrame() {	
 
+	std::unique_ptr<Buffer> bufferAssets = std::make_unique<Buffer>(device, physicalDevice, commandPool, graphicsQueue, swapChainImages, swapChainExtent, uniformBufferMemory);
+
+	uint32_t imageIndex;
 	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvaialbleSemaphore[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
 	if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
@@ -22,6 +27,9 @@ void Renderer::drawFrame() {
 
 	//Mark the image as being in use by the frame
 	imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
+	//HEREEE
+	bufferAssets->updateUniformBuffers(imageIndex);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

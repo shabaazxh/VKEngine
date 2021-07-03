@@ -26,6 +26,8 @@
 #include "Renderer.h"
 #include "Object.h"
 #include "Buffer.h"
+#include "DescriptorSetLayout.h"
+#include "Descriptors.h"
 
 
 //next thing to do -- VERTEX BUFFERS -- Staging buffer == 
@@ -84,13 +86,15 @@ private:
 	std::unique_ptr<Renderer> renderer;
 	std::unique_ptr<Buffer> buffers;
 	std::unique_ptr<Object> objectData;
+	std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
+	std::unique_ptr<Descriptors> descriptors;
 	
 	void initWindow() {
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		window = glfwCreateWindow(800, 600, "title", nullptr, nullptr);
+		window = glfwCreateWindow(1920, 1080, "title", nullptr, nullptr);
 	}
 	void initVulkan() {
 		createInstance();
@@ -102,7 +106,10 @@ private:
 		renderPass = std::make_unique<RenderPass>(logicalDevice, swapChainImageFormat);
 		renderPass->createRenderPass();
 
-		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->getRenderPass(), swapChainExtent);
+		descriptorSetLayout = std::make_unique<DescriptorSetLayout>(logicalDevice);
+		descriptorSetLayout->createDescriptorSetLayout();
+
+		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->getRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
 		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
 		//pipeline->createComputePipeline("compute.comp.spv");
 
@@ -114,13 +121,23 @@ private:
 		commandPool->createCommandPool();
 
 		objectData = std::make_unique<Object>();
-		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue);
+		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent);
 		buffers->createVertexBuffer();
+		buffers->createUniformBuffer();
 
-		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer());
+		descriptors = std::make_unique<Descriptors>(logicalDevice, swapChainImages, buffers->getUniformBuffers(), descriptorSetLayout->getDescriptorSetLayout());;
+		descriptors->createDescriptorPool();
+		descriptors->createDescriptorSets();
+
+		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, 
+			frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), 
+			renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), 
+			pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer(), 
+			pipeline->getPipelineLayout(), descriptors->getDescriptorSets());
+
 		commandBuffers->createCommandBuffers();
 
-		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages);
+		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages, swapChainExtent, physicalDevice,commandPool->getCommandPool(), buffers->getUniformBuffersMemory());
 		renderer->createSyncObjects();
 
 	}
@@ -129,9 +146,10 @@ private:
 			glfwPollEvents();
 			renderer->drawFrame();
 		}
+		vkDeviceWaitIdle(logicalDevice);
 	}
 	void cleanupSwapChain() {
-		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
+
 		for (auto framebuffer : frameBuffers->getSwapChainFramebuffers()) {
 			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 		}
@@ -143,16 +161,28 @@ private:
 		vkDestroyPipeline(logicalDevice, pipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, pipeline->getPipelineLayout(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->getRenderPass(), nullptr);
+
 		//Destroy swapchain image views
 		for (auto imageView : swapChainImagesViews) {
 			vkDestroyImageView(logicalDevice, imageView, nullptr);
 		}
+
 		//Destroy the swapchain
 		vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+
+		//Destroy uniform buffers 
+		for (size_t i = 0; i < swapChainImages.size(); i++) {
+			vkDestroyBuffer(logicalDevice, buffers->getUniformBuffers()[i], nullptr);
+			vkFreeMemory(logicalDevice, buffers->getUniformBuffersMemory()[i], nullptr);
+		}
+
+		vkDestroyDescriptorPool(logicalDevice, descriptors->getDescriptorPool(), nullptr);
 	}
 
 	void cleanup() {
 		cleanupSwapChain();
+
+		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout->getDescriptorSetLayout(), nullptr);
 
 		vkDestroyBuffer(logicalDevice, buffers->getVertexBuffer(), nullptr);
 		vkFreeMemory(logicalDevice, buffers->getVertexBufferMemory(), nullptr);
@@ -163,13 +193,14 @@ private:
 			vkDestroyFence(logicalDevice, renderer->getFences()[i], nullptr);
 		}
 
+		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
+
 		//Destroy the logical device
 		vkDestroyDevice(logicalDevice, nullptr);
 		//Destroy surface to window
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		//Destroy Vulkan instance
 		vkDestroyInstance(instance, nullptr);
-
 
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -184,6 +215,8 @@ private:
 		renderPass->createRenderPass();
 		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
 		frameBuffers->createFramebuffers();
+		buffers->createUniformBuffer();
+		descriptors->createDescriptorPool();
 		commandBuffers->createCommandBuffers();
 
 	}

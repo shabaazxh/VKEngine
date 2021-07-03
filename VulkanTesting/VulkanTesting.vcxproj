@@ -22,6 +22,8 @@
     <ClCompile Include="Buffer.cpp" />
     <ClCompile Include="commandBuffers.cpp" />
     <ClCompile Include="commandPool.cpp" />
+    <ClCompile Include="Descriptors.cpp" />
+    <ClCompile Include="DescriptorSetLayout.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="Framebuffers.cpp" />
     <ClCompile Include="Object.cpp" />
@@ -42,6 +44,8 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="commandBuffers.h" />
     <ClInclude Include="commandPool.h" />
+    <ClInclude Include="Descriptors.h" />
+    <ClInclude Include="DescriptorSetLayout.h" />
     <ClInclude Include="Framebuffers.h" />
     <ClInclude Include="Helper.h" />
     <ClInclude Include="Object.h" />
