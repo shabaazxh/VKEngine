@@ -14,7 +14,7 @@ public:
 		VkCommandPool commandPool, VkRenderPass renderPass, 
 		VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, 
 		VkPipeline computePipeline, VkPhysicalDevice physicalDevice, 
-		VkBuffer renderingBuffer, VkPipelineLayout pipelineLayout,
+		VkBuffer renderingBuffer, VkBuffer indexBuffer,VkPipelineLayout pipelineLayout,
 		std::vector<VkDescriptorSet> descriptorSets);
 	void createCommandBuffers();
 
@@ -39,6 +39,7 @@ private:
 	std::vector<VkDescriptorSet> descriptorSets;
 
 	VkBuffer renderingBuffer;
+	VkBuffer indexBuffer;
 
 	
 };

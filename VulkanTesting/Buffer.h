@@ -25,9 +25,15 @@ public:
 
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
+	//Vertex buffer
 	void createVertexBuffer();
 	VkBuffer getVertexBuffer() { return vertexBuffer; }
 	VkDeviceMemory getVertexBufferMemory() { return vertexBufferMemory; }
+
+	//Index buffer
+	void createIndexBuffer();
+	VkBuffer getIndexBuffer() { return indexBuffer; }
+	VkDeviceMemory getIndexBufferMemory() { return indexBufferMemory; }
 
 	//Uniform buffer
 	void createUniformBuffer();
@@ -46,6 +52,9 @@ private:
 
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
+
+	VkBuffer indexBuffer;
+	VkDeviceMemory indexBufferMemory;
 
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;

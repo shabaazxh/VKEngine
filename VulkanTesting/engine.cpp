@@ -123,7 +123,9 @@ private:
 		objectData = std::make_unique<Object>();
 		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent);
 		buffers->createVertexBuffer();
+		buffers->createIndexBuffer();
 		buffers->createUniformBuffer();
+
 
 		descriptors = std::make_unique<Descriptors>(logicalDevice, swapChainImages, buffers->getUniformBuffers(), descriptorSetLayout->getDescriptorSetLayout());;
 		descriptors->createDescriptorPool();
@@ -132,7 +134,7 @@ private:
 		commandBuffers = std::make_unique<CommandBuffers>(logicalDevice, 
 			frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), 
 			renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), 
-			pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer(), 
+			pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer(), buffers->getIndexBuffer(), 
 			pipeline->getPipelineLayout(), descriptors->getDescriptorSets());
 
 		commandBuffers->createCommandBuffers();
@@ -181,6 +183,9 @@ private:
 
 	void cleanup() {
 		cleanupSwapChain();
+
+		vkDestroyBuffer(logicalDevice, buffers->getIndexBuffer(), nullptr);
+		vkFreeMemory(logicalDevice, buffers->getIndexBufferMemory(), nullptr);
 
 		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout->getDescriptorSetLayout(), nullptr);
 

@@ -5,7 +5,7 @@
 #include <vector>
 
 struct Vertex {
-	glm::vec2 pos;
+	glm::vec3 pos;
 	glm::vec3 color;
 
 	VkVertexInputBindingDescription getBindingDescription() {
@@ -45,15 +45,20 @@ class Object {
 public:
 	Vertex getInstance() { return instance; }
 	std::vector<Vertex> getTriangleData() { return vertices; }
+
+	std::vector<uint32_t> getIndexData() { return indices; }
 private:
 
 	Vertex instance;
 	std::vector<Vertex> vertices = {
-	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-	{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.0f, -0.9f}, {1.0f, 0.0f, 0.0f}}
+	{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}}
+	};
+
+	std::vector<uint32_t> indices = {
+		0,1,2,2,3,0
 	};
 
 };
