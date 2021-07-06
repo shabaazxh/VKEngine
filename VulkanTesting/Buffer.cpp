@@ -1,15 +1,16 @@
 #include "Buffer.h"
 
-Buffer::Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent) {
+Buffer::Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::array<glm::vec3, 3> cameraMovement) {
 	this->device = device;
 	this->physicalDevice = physicalDevice;
 	this->commandPool = commandPool;
 	this->graphicsQueue = graphicsQueue;
 	this->swapChainImages = swapChainImages;
 	this->swapChainExtent = swapChainExtent;
+	this->cameraMovement = cameraMovement;
 }
 
-Buffer::Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::vector<VkDeviceMemory> uniformBuffersMemory) {
+Buffer::Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::vector<VkDeviceMemory> uniformBuffersMemory, std::array<glm::vec3, 3> cameraMovement) {
 	this->device = device;
 	this->physicalDevice = physicalDevice;
 	this->commandPool = commandPool;
@@ -17,6 +18,7 @@ Buffer::Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool c
 	this->swapChainImages = swapChainImages;
 	this->swapChainExtent = swapChainExtent;
 	this->uniformBuffersMemory = uniformBuffersMemory;
+	this->cameraMovement = cameraMovement;
 }
 
 void Buffer::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -89,8 +91,8 @@ void Buffer::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize siz
 
 }
 
-void Buffer::createVertexBuffer() {
-	VkDeviceSize bufferSize = sizeof(ObjectInfo->getTriangleData()[0]) * ObjectInfo->getTriangleData().size();
+void Buffer::createVertexBuffer(unsigned int sizeBuffer, std::vector<Vertex> info) {
+	VkDeviceSize bufferSize = sizeBuffer;
 
 	//On the CPU 
 	VkBuffer stagingBuffer;
@@ -102,7 +104,7 @@ void Buffer::createVertexBuffer() {
 	//Copy vertex data into vertex buffer
 	void* data;
 	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, ObjectInfo->getTriangleData().data(), (size_t) bufferSize);
+	memcpy(data, info.data(), (size_t) bufferSize);
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | 
@@ -116,8 +118,8 @@ void Buffer::createVertexBuffer() {
 
 }
 
-void Buffer::createIndexBuffer() {
-	VkDeviceSize bufferSize = sizeof(ObjectInfo->getIndexData()[0]) * ObjectInfo->getIndexData().size();
+void Buffer::createIndexBuffer(unsigned int sizeBuffer, std::vector<uint32_t> info) {
+	VkDeviceSize bufferSize = sizeBuffer;
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -126,7 +128,7 @@ void Buffer::createIndexBuffer() {
 
 	void* data;
 	vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, ObjectInfo->getIndexData().data(), (size_t)bufferSize);
+	memcpy(data, info.data(), (size_t)bufferSize);
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -159,11 +161,16 @@ void Buffer::updateUniformBuffers(uint32_t currentImage) {
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+	//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	ubo.view = glm::lookAt(cameraMovement[0], cameraMovement[0] * cameraMovement[1], cameraMovement[2]);
+	//ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;
 	ubo.time = (float)glfwGetTime();
+
+	ubo.model = glm::scale(ubo.model, glm::vec3(0.3, 0.3, 0.3));
 
 	void* data;
 	vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);

@@ -1,7 +1,7 @@
 #include "commandBuffers.h"
 #include <iostream>
 
-CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer, VkBuffer indexBuffer ,VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSet> descriptorSets) {
+CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer, VkBuffer indexBuffer ,VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSet> descriptorSets, std::vector<Vertex> CubeVert) {
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
 	this->commandPool = commandPool;
@@ -13,6 +13,7 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->pipelineLayout = pipelineLayout;
 	this->descriptorSets = descriptorSets;
 	this->indexBuffer = indexBuffer;
+	this->CubeVert = CubeVert;
 }
 
 
@@ -37,7 +38,6 @@ void CommandBuffers::createCommandBuffers() {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
-
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = renderPass;
@@ -54,15 +54,16 @@ void CommandBuffers::createCommandBuffers() {
 
 		VkBuffer vertexBuffers[] = { renderingBuffer };
 		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 		
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		//vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getTriangleData().size()), 1, 0, 0);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getIndexData().size()), 30, 0,0,0);
+		vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(CubeVert.size()), 1, 0, 0);
+
+		//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 

@@ -55,6 +55,8 @@ void Descriptors::createDescriptorSets() {
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+		std::array<VkWriteDescriptorSet, 1> writeDescriptorSet = { descriptorWrite };
+
+		vkUpdateDescriptorSets(device, 1, writeDescriptorSet.data(), 0, nullptr);
 	}
 }

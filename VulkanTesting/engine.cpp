@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <memory>
+#include <array>
 
 //Class
 #include "pipeline.h"
@@ -28,6 +29,7 @@
 #include "Buffer.h"
 #include "DescriptorSetLayout.h"
 #include "Descriptors.h"
+#include "Input.h"
 
 
 //next thing to do -- VERTEX BUFFERS -- Staging buffer == 
@@ -88,13 +90,18 @@ private:
 	std::unique_ptr<Object> objectData;
 	std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
 	std::unique_ptr<Descriptors> descriptors;
-	
+	std::unique_ptr<Input> GameInput = std::make_unique<Input>();
+
+
 	void initWindow() {
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 		window = glfwCreateWindow(1920, 1080, "title", nullptr, nullptr);
+
+		GameInput->setCameraSettings(window, glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
 	}
 	void initVulkan() {
 		createInstance();
@@ -120,10 +127,13 @@ private:
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
 		commandPool->createCommandPool();
 
+		std::array<glm::vec3, 3> CameraMovement = { GameInput->getCameraPos(), GameInput->getCameraFront(), GameInput->getcameraUp() };
+		
 		objectData = std::make_unique<Object>();
-		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent);
-		buffers->createVertexBuffer();
-		buffers->createIndexBuffer();
+		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
+		objectData->loadModel("C:/Users/Shahb/Desktop/cube.obj");
+		buffers->createVertexBuffer(sizeof(objectData->getTriangleData()[0]) * objectData->getTriangleData().size(), objectData->getTriangleData());
+		//buffers->createIndexBuffer(sizeof(objectData->getIndexData()[0]) * objectData->getIndexData().size(), objectData->getIndexData());
 		buffers->createUniformBuffer();
 
 
@@ -135,18 +145,19 @@ private:
 			frameBuffers->getSwapChainFramebuffers(), commandPool->getCommandPool(), 
 			renderPass->getRenderPass(), swapChainExtent, pipeline->getGraphicsPipeline(), 
 			pipeline->getComputePipeline(), physicalDevice, buffers->getVertexBuffer(), buffers->getIndexBuffer(), 
-			pipeline->getPipelineLayout(), descriptors->getDescriptorSets());
+			pipeline->getPipelineLayout(), descriptors->getDescriptorSets(), objectData->getTriangleData());
 
 		commandBuffers->createCommandBuffers();
 
-		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages, swapChainExtent, physicalDevice,commandPool->getCommandPool(), buffers->getUniformBuffersMemory());
+		renderer = std::make_unique<Renderer>(logicalDevice, swapChain, commandBuffers->getCommandBuffers(), graphicsQueue, presentQueue, swapChainImages, swapChainExtent, physicalDevice,commandPool->getCommandPool(), buffers->getUniformBuffersMemory(), CameraMovement);
 		renderer->createSyncObjects();
 
 	}
 	void mainloop() {
 		while (!glfwWindowShouldClose(window)) {
-			glfwPollEvents();
+			renderer->processInput(window);
 			renderer->drawFrame();
+			glfwPollEvents();
 		}
 		vkDeviceWaitIdle(logicalDevice);
 	}

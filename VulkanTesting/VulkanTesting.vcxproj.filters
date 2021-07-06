@@ -51,6 +51,12 @@
     <ClCompile Include="Descriptors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="tinyobjloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="compile.bat">
@@ -107,6 +113,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Descriptors.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

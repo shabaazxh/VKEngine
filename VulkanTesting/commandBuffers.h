@@ -15,7 +15,7 @@ public:
 		VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, 
 		VkPipeline computePipeline, VkPhysicalDevice physicalDevice, 
 		VkBuffer renderingBuffer, VkBuffer indexBuffer,VkPipelineLayout pipelineLayout,
-		std::vector<VkDescriptorSet> descriptorSets);
+		std::vector<VkDescriptorSet> descriptorSets, std::vector<Vertex> CubeVert);
 	void createCommandBuffers();
 
 	std::vector<VkCommandBuffer> getCommandBuffers() { return commandBuffers; }
@@ -40,6 +40,9 @@ private:
 
 	VkBuffer renderingBuffer;
 	VkBuffer indexBuffer;
+
+	std::vector<Vertex> CubeVert;
+	//std::vector<uint32_t> modelIndex;
 
 	
 };

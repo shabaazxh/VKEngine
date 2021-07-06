@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include "Object.h"
 #include <memory>
+#include <GLFW/glfw3.h>
 
 class Pipeline {
 public:
@@ -16,6 +17,7 @@ public:
 	void createComputePipeline(std::string computeFile);
 
 	VkPipeline getComputePipeline() { return computePipeline; }
+
 private:
 	VkDevice device;
 	VkExtent2D swapChainExtent;

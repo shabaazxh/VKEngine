@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <stdexcept>
+#include <array>
 
 class Descriptors {
 public:
@@ -15,7 +16,9 @@ public:
 private:
 	VkDevice device;
 	VkDescriptorSetLayout descriptorSetLayout;
+
 	std::vector<VkBuffer> uniformBuffers;
+
 	std::vector<VkImage> swapChainImages;
 	VkDescriptorPool descriptorPool;
 	std::vector<VkDescriptorSet> descriptorSets;

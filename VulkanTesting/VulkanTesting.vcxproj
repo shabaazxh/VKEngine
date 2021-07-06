@@ -26,11 +26,13 @@
     <ClCompile Include="DescriptorSetLayout.cpp" />
     <ClCompile Include="engine.cpp" />
     <ClCompile Include="Framebuffers.cpp" />
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="tinyobjloader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="compile.bat" />
@@ -48,6 +50,7 @@
     <ClInclude Include="DescriptorSetLayout.h" />
     <ClInclude Include="Framebuffers.h" />
     <ClInclude Include="Helper.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="Renderer.h" />
@@ -124,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\tinyobjloader;C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -142,7 +145,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\tinyobjloader;C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -160,7 +163,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\tinyobjloader;C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -178,7 +181,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Shahb\Desktop\tinyobjloader;C:\Users\Shahb\Desktop\glfw-3.3.4.bin.WIN64\include;C:\Users\Shahb\Desktop\glm;C:\VulkanSDK\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>

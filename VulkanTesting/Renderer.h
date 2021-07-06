@@ -6,14 +6,14 @@
 #include "Buffer.h"
 #include <memory>
 #include <iostream>
-
+#include <array>
 
 class Renderer {
 public:
 	Renderer(VkDevice device, VkSwapchainKHR swapChain, 
 		std::vector<VkCommandBuffer> commandBuffers, 
 		VkQueue graphicsQueue, VkQueue presentQueue, 
-		std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::vector<VkDeviceMemory> uniformBufferMemory);
+		std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::vector<VkDeviceMemory> uniformBufferMemory, std::array<glm::vec3, 3> cameraMovement);
 	void createSyncObjects();
 	void drawFrame();
 
@@ -23,6 +23,9 @@ public:
 	std::vector<VkFence> getFences() { return inFlightFences; }
 
 	int getMaxFrames() { return MAX_FRAMES_IN_FLIGHT; }
+
+
+	void processInput(GLFWwindow* window);
 
 private:
 	std::vector<VkSemaphore> imageAvaialbleSemaphore;
@@ -42,6 +45,8 @@ private:
 
 	VkPhysicalDevice physicalDevice;
 	VkCommandPool commandPool;
+
+	std::array<glm::vec3, 3> cameraMovement;
 
 	const int MAX_FRAMES_IN_FLIGHT = 2;
 
