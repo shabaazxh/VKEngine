@@ -1,7 +1,14 @@
 #include "Renderer.h"
 
 
-Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, std::vector<VkCommandBuffer> commandBuffers, VkQueue graphicsQueue, VkQueue presentQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::vector<VkDeviceMemory> uniformBufferMemory, std::array<glm::vec3,3> cameraMovement) {
+Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, std::vector<VkCommandBuffer> commandBuffers, 
+	VkQueue graphicsQueue, VkQueue presentQueue, std::vector<VkImage> swapChainImages, 
+	VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, 
+	std::vector<VkDeviceMemory> uniformBufferMemory, 
+	std::vector<VkDeviceMemory> LightBufferMemory,
+	std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory,
+	std::array<glm::vec3,3> cameraMovement) {
+
 	this->device = device;
 	this->swapChain = swapChain;
 	this->commandBuffers = commandBuffers;
@@ -12,12 +19,15 @@ Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain, std::vector<VkComm
 	this->physicalDevice = physicalDevice;
 	this->commandPool = commandPool;
 	this->uniformBufferMemory = uniformBufferMemory;
+	this->LightBufferMemory = LightBufferMemory;
+	this->SSAOKenrnelBufferMemory = SSAOKenrnelBufferMemory;
 	this->cameraMovement = cameraMovement;
 }
 
 void Renderer::drawFrame() {	
 
-	std::unique_ptr<Buffer> bufferAssets = std::make_unique<Buffer>(device, physicalDevice, commandPool, graphicsQueue, swapChainImages, swapChainExtent, uniformBufferMemory, cameraMovement);
+	std::unique_ptr<Buffer> bufferAssets = std::make_unique<Buffer>(device, physicalDevice, commandPool, graphicsQueue, 
+		swapChainImages, swapChainExtent, uniformBufferMemory,  LightBufferMemory, SSAOKenrnelBufferMemory, cameraMovement);
 
 	uint32_t imageIndex;
 	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvaialbleSemaphore[currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -94,7 +104,13 @@ void Renderer::createSyncObjects() {
 	}
 }
 
+void Renderer::scroll_callback(GLFWwindow* window, double xOffset, double yOffset) {
+	if (yOffset > 0) {
+		cameraFov++;
+	}
+}
 void Renderer::processInput(GLFWwindow* window) {
+
 
 	float cameraSpeed = 0.005f;
 
@@ -120,7 +136,9 @@ void Renderer::processInput(GLFWwindow* window) {
 
 	if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 		cameraMovement[0].y -= 0.003;
+		//std::cout << cameraMovement[0].y << std::endl;
 	}
+
 
 
 

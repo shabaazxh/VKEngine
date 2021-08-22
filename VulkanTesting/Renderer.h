@@ -13,7 +13,12 @@ public:
 	Renderer(VkDevice device, VkSwapchainKHR swapChain, 
 		std::vector<VkCommandBuffer> commandBuffers, 
 		VkQueue graphicsQueue, VkQueue presentQueue, 
-		std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, std::vector<VkDeviceMemory> uniformBufferMemory, std::array<glm::vec3, 3> cameraMovement);
+		std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, 
+		VkPhysicalDevice physicalDevice, VkCommandPool commandPool, 
+		std::vector<VkDeviceMemory> uniformBufferMemory, 
+		std::vector<VkDeviceMemory> LightBufferMemory,
+		std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory,
+		std::array<glm::vec3, 3> cameraMovement);
 	void createSyncObjects();
 	void drawFrame();
 
@@ -24,7 +29,7 @@ public:
 
 	int getMaxFrames() { return MAX_FRAMES_IN_FLIGHT; }
 
-
+	void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 	void processInput(GLFWwindow* window);
 
 private:
@@ -34,6 +39,8 @@ private:
 	std::vector<VkFence> imagesInFlight;
 
 	std::vector<VkDeviceMemory> uniformBufferMemory;
+	std::vector<VkDeviceMemory> LightBufferMemory;
+	std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory;
 
 	VkSwapchainKHR swapChain;
 	std::vector<VkImage> swapChainImages;
@@ -52,5 +59,7 @@ private:
 
 	//To use right pair of semaphores, need to keep track of current frame
 	size_t currentFrame = 0;
+
+	float cameraFov;
 
 };

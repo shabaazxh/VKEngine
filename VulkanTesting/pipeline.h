@@ -8,24 +8,27 @@
 #include <GLFW/glfw3.h>
 
 class Pipeline {
-public:
-	Pipeline(VkDevice device, VkRenderPass renderPass,VkExtent2D swapChainExtent, VkDescriptorSetLayout descriptorSetLayout);
-	void createGraphicsPipeline(std::string vertFile, std::string fragFile);
-	VkPipelineLayout getPipelineLayout() { return pipelineLayout; }
-	VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
+	public:
+		Pipeline(VkDevice device, VkRenderPass renderPass,VkExtent2D swapChainExtent, VkDescriptorSetLayout descriptorSetLayout);
+		
+		void createGraphicsPipeline(std::string vertFile, std::string fragFile);
+		void createGraphicsPipelineOverlay(std::string vertFile, std::string fragFile);
+		void createGraphicsPipelineSingleShader(std::string vertFile);
+		void createGeometryPassGraphicsPipeline(std::string vertFile, std::string fragFile);
 
-	void createComputePipeline(std::string computeFile);
 
-	VkPipeline getComputePipeline() { return computePipeline; }
+		VkPipelineLayout getPipelineLayout() { return pipelineLayout; }
+		VkPipeline getGraphicsPipeline() { return graphicsPipeline; }
 
-private:
-	VkDevice device;
-	VkExtent2D swapChainExtent;
-	VkPipelineLayout pipelineLayout;
-	VkRenderPass renderPass;
-	VkPipeline graphicsPipeline;
-	VkPipeline computePipeline;
-	VkDescriptorSetLayout descriptorSetLayout;
+		void createComputePipeline(std::string computeFile);
+		VkPipeline getComputePipeline() { return computePipeline; }
 
-	std::unique_ptr<Object> GameObject = std::make_unique<Object>();
+	private:
+		VkDevice device;
+		VkExtent2D swapChainExtent;
+		VkPipelineLayout pipelineLayout;
+		VkRenderPass renderPass;
+		VkPipeline graphicsPipeline;
+		VkPipeline computePipeline;
+		VkDescriptorSetLayout descriptorSetLayout;
 };
