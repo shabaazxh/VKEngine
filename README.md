@@ -6,12 +6,4 @@ with new features as I continue to learn more about computer graphics programmin
 Since this is my first attempt at building an engine using Vulkan, there might be some obvious issues. These issues are most likely fixed 
 and will be availble to view in the **Development** branch.
 
-Features:
-  * Camera movement
-  * SSAO
-  * Shadows
-  * Lighting
-  * Model loading
-  * Textures
-
 ![Running Instance of current engine](pictures/RunningEngine.png)
