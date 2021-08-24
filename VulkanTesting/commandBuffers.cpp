@@ -1,11 +1,45 @@
 #include "commandBuffers.h"
 #include <iostream>
 
-CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, VkCommandPool commandPool, VkRenderPass renderPass, VkExtent2D swapChainExtent, VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, VkBuffer renderingBuffer, VkBuffer indexBuffer ,VkPipelineLayout pipelineLayout, std::vector<VkDescriptorSet> descriptorSets) {
+CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, 
+	VkCommandPool commandPool, VkRenderPass SceneRenderPass, VkExtent2D swapChainExtent,
+	VkPipeline graphicsPipeline, VkPipeline computePipeline, VkPhysicalDevice physicalDevice, 
+	VkBuffer renderingBuffer, VkBuffer indexBuffer ,VkPipelineLayout pipelineLayout, 
+	std::vector<VkDescriptorSet> descriptorSets, std::vector<Vertex> sceneVertexInformation,
+	VkPipeline shadowPipeline, VkFramebuffer shadowFramebuffer, VkRenderPass shadowRenderPass,
+	VkPipelineLayout shadowPipelineLayout, 
+	VkPipeline shadowGraphicsPipeline,
+	std::vector<Vertex> FloorVertexData,
+	VkBuffer FloorRenderBuffer,
+	std::vector<uint32_t> QuadIndices,
+	VkBuffer QuadVertexBuffer,
+	VkBuffer QuadIndexBuffer,
+	VkPipeline QuadPipeline,
+	VkPipelineLayout QuadPipelineLayout,
+	VkRenderPass QuadRenderPass,
+	VkFramebuffer displaySceneFramebuffer,
+	std::vector<VkDescriptorSet> sceneDescriptorSets, 
+	VkPipeline GeometryPassPipeline,
+	VkPipelineLayout GeometryPassPipelineLayout,
+	VkRenderPass GeoRenderPass,
+	VkFramebuffer GeoFramebuffer,
+	VkPipeline SSAOQuadPipeline,
+	VkPipelineLayout SSAOQuadPipelineLayout,
+	VkBuffer SSAOQuadVertexBuffer,
+	VkBuffer SSAOQuadIndexBuffer,
+	VkRenderPass SSAOQuadRenderPass,
+	VkFramebuffer SSAOQuadFramebuffer,
+	std::vector<VkDescriptorSet> SSAODescriptorSets,
+	VkPipeline SSAOLightingPipeline,
+	VkPipelineLayout SSAOLightingPipelineLayout,
+	std::vector<VkDescriptorSet> SSAOLightingDescriptorSet,
+	VkFramebuffer SSAOLightingFramebuffer,
+	VkRenderPass SSAOLightingRenderPass){
+
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
 	this->commandPool = commandPool;
-	this->renderPass = renderPass;
+	this->SceneRenderPass = SceneRenderPass;
 	this->swapChainExtent = swapChainExtent;
 	this->graphicsPipeline = graphicsPipeline;
 	this->computePipeline = computePipeline;
@@ -13,8 +47,39 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->pipelineLayout = pipelineLayout;
 	this->descriptorSets = descriptorSets;
 	this->indexBuffer = indexBuffer;
+	this->sceneVertexInformation = sceneVertexInformation;
+	this->shadowPipeline = shadowPipeline;
+	this->shadowFramebuffer = shadowFramebuffer;
+	this->shadowRenderPass = shadowRenderPass;
+	this->shadowPipelineLayout = shadowPipelineLayout;
+	this->shadowGraphicsPipeline = shadowGraphicsPipeline;
+	this->FloorVertexData = FloorVertexData;
+	this->FloorRenderBuffer = FloorRenderBuffer;
+	this->QuadIndices = QuadIndices;
+	this->QuadVertexBuffer = QuadVertexBuffer;
+	this->QuadIndexBuffer = QuadIndexBuffer;
+	this->QuadPipeline = QuadPipeline;
+	this->QuadPipelineLayout = QuadPipelineLayout;
+	this->QuadRenderPass = QuadRenderPass;
+	this->displaySceneFramebuffer = displaySceneFramebuffer;
+	this->sceneDescriptorSets = sceneDescriptorSets;
+	this->GeometryPassPipeline = GeometryPassPipeline;
+	this->GeometryPassPipelineLayout = GeometryPassPipelineLayout;
+	this->GeoRenderPass = GeoRenderPass;
+	this->GeoFramebuffer = GeoFramebuffer;
+	this->SSAOQuadPipeline = SSAOQuadPipeline;
+	this->SSAOQuadPipelineLayout = SSAOQuadPipelineLayout;
+	this->SSAOQuadVertexBuffer = SSAOQuadVertexBuffer;
+	this->SSAOQuadIndexBuffer = SSAOQuadIndexBuffer;
+	this->SSAOQuadRenderPass = SSAOQuadRenderPass;
+	this->SSAOQuadFramebuffer = SSAOQuadFramebuffer;
+	this->SSAODescriptorSets = SSAODescriptorSets;
+	this->SSAOLightingPipeline = SSAOLightingPipeline;
+	this->SSAOLightingPipelineLayout = SSAOLightingPipelineLayout;
+	this->SSAOLightingDescriptorSet = SSAOLightingDescriptorSet;
+	this->SSAOLightingFramebuffer = SSAOLightingFramebuffer;
+	this->SSAOLightingRenderPass = SSAOLightingRenderPass;
 }
-
 
 void CommandBuffers::createCommandBuffers() {
 	commandBuffers.resize(swapChainFramebuffers.size());
@@ -37,35 +102,195 @@ void CommandBuffers::createCommandBuffers() {
 			throw std::runtime_error("failed to begin recording command buffer!");
 		}
 
+		//------------------------- Shadow render pass --------------------------------------------------
+		VkRenderPassBeginInfo renderPassInfo2{};
+		renderPassInfo2.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo2.renderPass = shadowRenderPass;
+		renderPassInfo2.framebuffer = shadowFramebuffer;
+		renderPassInfo2.renderArea.offset = { 0,0 };
+		renderPassInfo2.renderArea.extent.width = 2048;
+		renderPassInfo2.renderArea.extent.height = 2048;
 
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass;
-		renderPassInfo.framebuffer = swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = { 0,0 };
-		renderPassInfo.renderArea.extent = swapChainExtent;
+		VkClearValue clearValuesShadow[2];
+		clearValuesShadow[0].depthStencil = { 1.0f, 0 };
 
-		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
+		renderPassInfo2.clearValueCount = 1;
+		renderPassInfo2.pClearValues = clearValuesShadow;
 
-		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo2, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowGraphicsPipeline);
 
-		VkBuffer vertexBuffers[] = { renderingBuffer };
-		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-		
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+		VkBuffer vertexBuffers2[] = { renderingBuffer };
 
-		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		VkDeviceSize offsets2[] = { 0 };
 
-		//vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getTriangleData().size()), 1, 0, 0);
-
-		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(GameObjectVertices->getIndexData().size()), 30, 0,0,0);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers2, offsets2);
+		//vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+		//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
+		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
+		// -------------------- Normal scene render ----------------------
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = SceneRenderPass;
+		renderPassInfo.framebuffer = displaySceneFramebuffer;
+		renderPassInfo.renderArea.offset = { 0,0 };
+		renderPassInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 2> clearValues{};
+		clearValues[0].color = { 0.3f, 0.5f, .7f, 1.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkBuffer vertexBuffers3[] = { renderingBuffer };
+		VkBuffer FloorVertex[] = { FloorRenderBuffer };
+		VkDeviceSize offsets3[] = { 0 };
+
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+		
+		// Object model
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
+		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
+		
+		//Floor model
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, FloorVertex, offsets3);
+		vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+		/** -----------------------------  GEOMETRY PASS Render -------------------------- */
+
+		VkRenderPassBeginInfo GeometryPassRenderInfo{};
+		GeometryPassRenderInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		GeometryPassRenderInfo.renderPass = GeoRenderPass;
+		GeometryPassRenderInfo.framebuffer = GeoFramebuffer;
+		GeometryPassRenderInfo.renderArea.offset = { 0,0 };
+		GeometryPassRenderInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 4> GeoPassClearColor{};
+		GeoPassClearColor[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GeoPassClearColor[1].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GeoPassClearColor[2].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+		GeoPassClearColor[3].depthStencil = { 1.0f, 0 };
+		/*GeoPassClearColor[3].color = { 0.0f, 0.0f, 0.0f, 1.0f };*/
+
+		GeometryPassRenderInfo.clearValueCount = static_cast<uint32_t>(GeoPassClearColor.size());
+		GeometryPassRenderInfo.pClearValues = GeoPassClearColor.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &GeometryPassRenderInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, GeometryPassPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, GeometryPassPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+
+		// Object model
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
+		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
+
+		////Floor model
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, FloorVertex, offsets3);
+		vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+
+		/** -----------------------------  SSAO QUAD Render -------------------------- */
+
+		VkRenderPassBeginInfo SSAOQuadRenderPassInfo{};
+		SSAOQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		SSAOQuadRenderPassInfo.renderPass = SSAOQuadRenderPass;
+		SSAOQuadRenderPassInfo.framebuffer = SSAOQuadFramebuffer;
+		SSAOQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		SSAOQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 1> SSAOQuadClearValues{};
+		SSAOQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		SSAOQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOQuadClearValues.size());
+		SSAOQuadRenderPassInfo.pClearValues = SSAOQuadClearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &SSAOQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkBuffer SSAOQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
+		VkDeviceSize SSAOQuadOffSet[] = { 0 };
+
+		// SSAO Quad render
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipelineLayout, 0, 1, &SSAODescriptorSets[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOQuadVertexBufferArr, SSAOQuadOffSet);
+		vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+		/** -----------------------------  SSAO Lighting QUAD Render -------------------------- */
+
+		VkRenderPassBeginInfo SSAOLightingQuadRenderPassInfo{};
+		SSAOLightingQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		SSAOLightingQuadRenderPassInfo.renderPass = SSAOLightingRenderPass;
+		SSAOLightingQuadRenderPassInfo.framebuffer = SSAOLightingFramebuffer;
+		SSAOLightingQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		SSAOLightingQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 1> SSAOLightingQuadClearValues{};
+		SSAOLightingQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		SSAOLightingQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOLightingQuadClearValues.size());
+		SSAOLightingQuadRenderPassInfo.pClearValues = SSAOLightingQuadClearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &SSAOLightingQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkBuffer SSAOLightingQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
+		VkDeviceSize SSAOLightingQuadOffSet[] = { 0 };
+
+		// SSAO Quad render
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOLightingPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOLightingPipelineLayout, 0, 1, &SSAOLightingDescriptorSet[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOLightingQuadVertexBufferArr, SSAOLightingQuadOffSet);
+		vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+		/** -----------------------------  QUAD Render -------------------------- */
+
+		VkRenderPassBeginInfo QuadRenderPassInfo{};
+		QuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		QuadRenderPassInfo.renderPass = QuadRenderPass;
+		QuadRenderPassInfo.framebuffer = swapChainFramebuffers[i];
+		QuadRenderPassInfo.renderArea.offset = { 0,0 };
+		QuadRenderPassInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 1> QuadClearValues{};
+		QuadClearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		QuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(QuadClearValues.size());
+		QuadRenderPassInfo.pClearValues = QuadClearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &QuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkBuffer QuadVertexBufferArr[] = { QuadVertexBuffer };
+		VkDeviceSize QuadOffSet[] = { 0 };
+
+		// Quad render
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, QuadPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, QuadPipelineLayout, 0, 1, &sceneDescriptorSets[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, QuadVertexBufferArr, QuadOffSet);
+		vkCmdBindIndexBuffer(commandBuffers[i], QuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+		
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer!");
 		}

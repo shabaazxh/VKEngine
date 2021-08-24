@@ -8,7 +8,7 @@
 class CommandPool {
 public:
 	CommandPool(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, std::optional<uint32_t> graphicsValue);
-	void createCommandPool();
+	void createCommandPool(uint32_t value);
 
 	VkCommandPool getCommandPool() { return commandPool; }
 

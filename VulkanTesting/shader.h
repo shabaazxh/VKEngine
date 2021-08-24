@@ -2,7 +2,7 @@
 #include <vector>
 #include <fstream>
 #include <vulkan/vulkan.h>
-
+#include "Buffer.h"
 
 class Shader {
 public:
