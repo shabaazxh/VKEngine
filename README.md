@@ -1,12 +1,6 @@
-# Vulkan Engine
+# Vulkan Engine [Development]
 
-This is my first engine with Vulkan. This engine was built alongside learning Vulkan from the beginning and will continue to see further improvements and changes
-with new features as I continue to learn more about computer graphics programming and the Vulkan API.
+Welcome to the Development branch for the Vulkan Engine. 
 
-Features:
-  * Camera movement
-  * SSAO
-  * Shadows
-  * Lighting
-  * Model loading
-  * Textures
+The development branch will contain all the latest improvements to the engine including new features and stability fixes.
+For a more smoother experience, the master build remains the most stable version of the engine.
