@@ -7,12 +7,11 @@ Since this is my first attempt at building an engine using Vulkan, there might b
 and will be availble to view in the **Development** branch.
 
 **Install**
-[VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+* [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
 
-** Externals:
+**Externals**:
 * [GLFW](https://www.glfw.org/)
 * [GLM](https://github.com/g-truc/glm)
 * [STB](https://github.com/nothings/stb)
-* 
 
 ![Running Instance of current engine](pictures/RunninEngineGam.PNG)
