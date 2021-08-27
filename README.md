@@ -6,7 +6,13 @@ with new features as I continue to learn more about computer graphics programmin
 Since this is my first attempt at building an engine using Vulkan, there might be some obvious issues. These issues are most likely fixed 
 and will be availble to view in the **Development** branch.
 
+**Install**
+[VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+
 ** Externals:
-[GLFW](https://www.glfw.org/)
+* [GLFW](https://www.glfw.org/)
+* [GLM](https://github.com/g-truc/glm)
+* [STB](https://github.com/nothings/stb)
+* 
 
 ![Running Instance of current engine](pictures/RunninEngineGam.PNG)
