@@ -192,7 +192,7 @@ private:
 		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
 
 		FloorPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		FloorPipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
+		FloorPipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.frag.spv");
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
@@ -216,10 +216,21 @@ private:
 
 		frameBuffers->createSSAOLightingQuadFrameBuffer(renderPass->GetSSAOLightingRenderPass(), ImageRes->GetSSAOLightingImageView());
 
-		/*ImageRes->setDiffusePath("C:/Users/Shahb/Desktop/textures/redbull.png");
-		ImageRes->setNormPath("C:/Users/Shahb/Desktop/textures/roughness.jpg");
-		ImageRes->createTextureImage();
-		ImageRes->createTextureImageView();*/
+
+		ImageTools::imageInfo F1Image{};
+		F1Image.DiffuseLocation = "C:/Users/Shahb/Desktop/damaged-helmet/source/Default_albedo.jpg";
+		F1Image.normalsFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_metal.jpeg";
+		F1Image.AOFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_AO.jpeg";
+		F1Image.EmissionFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_emissive.jpeg";
+		ImageRes->createTextureImage(F1Image);
+
+		ImageTools::imageInfo FloorImageInfo{};
+		FloorImageInfo.DiffuseLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.normalsFileLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.AOFileLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.EmissionFileLocation = "C:/Users/Shahb/Desktop/white.png";
+
+		ImageRes->createTextureImage(FloorImageInfo);
 
 		ImageRes->createTextureSampler();
 		ImageRes->createSceneSampler();
@@ -231,7 +242,7 @@ private:
 		SecondModel = std::make_unique <Object>();
 		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
 	
-		objectData->loadModel("C:/Users/Shahb/Desktop/f1carwithcubes.obj"); //f1_onthefloor 
+		objectData->loadModel("C:/Users/Shahb/Desktop/damaged-helmet/source/DamagedHelmet.obj"); //f1_onthefloor f1carwithcubes
 		SecondModel->loadModel("C:/Users/Shahb/Desktop/floor.obj");
 
 		buffers->createVertexBuffer(sizeof(objectData->getVertexData()[0]) * objectData->getVertexData().size(), objectData->getVertexData());
@@ -276,8 +287,14 @@ private:
 			ImageRes->GetSceneSampler(),
 			ImageRes->GetSceneImageView(),
 			ImageRes->GetRepeatSampler(),
+			F1Image.textureImageView,
+			F1Image.NormalsImageView,
 			FloorObjectBuffer->getUniformBuffers(),
-			FloorObjectBuffer->getLightBuffers());
+			FloorObjectBuffer->getLightBuffers(),
+			FloorImageInfo.textureImageView,
+			FloorImageInfo.NormalsImageView,
+			F1Image.AOImageView,
+			F1Image.EmissionImageView);
 
 		descriptors->createDescriptorPool();
 		descriptors->createDescriptorSets();
@@ -326,7 +343,10 @@ private:
 			SSAOLightingPipeline->getPipelineLayout(),
 			descriptors->GetSSAOLightingDescriptorSets(),
 			frameBuffers->GetSSAOLightingFramebuffer(),
-			renderPass->GetSSAOLightingRenderPass());
+			renderPass->GetSSAOLightingRenderPass(),
+			FloorPipeline->getGraphicsPipeline(),
+			FloorPipeline->getPipelineLayout(),
+			descriptors->GetFloorDescriptorSet());
 
 		commandBuffers->createCommandBuffers();
 
@@ -363,6 +383,9 @@ private:
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetDisplaySceneFramebuffer(), nullptr);
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->getShadowFramebuffer(), nullptr);
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetGeometryPassFrameBuffer(), nullptr);
+		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSceneFrameBuffer(), nullptr);
+		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOFramebuffer(), nullptr);
+		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOLightingFramebuffer(), nullptr);
 
 		//Free command buffers 
 		vkFreeCommandBuffers(logicalDevice, commandPool->getCommandPool(), static_cast<uint32_t>(commandBuffers->getCommandBuffers
@@ -374,6 +397,9 @@ private:
 		vkDestroyPipeline(logicalDevice, FloorPipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipeline(logicalDevice, QuadPipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipeline(logicalDevice, GeometryPassPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(logicalDevice, SSAOLightingPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(logicalDevice, SSAOQuadPipeline->getGraphicsPipeline(), nullptr);
+
 
 		// Pipeline Layout
 		vkDestroyPipelineLayout(logicalDevice, shadowPipeline->getPipelineLayout(), nullptr);
@@ -381,13 +407,16 @@ private:
 		vkDestroyPipelineLayout(logicalDevice, FloorPipeline->getPipelineLayout(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, QuadPipeline->getPipelineLayout(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, GeometryPassPipeline->getPipelineLayout(), nullptr);
-
+		vkDestroyPipelineLayout(logicalDevice, SSAOLightingPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(logicalDevice, SSAOQuadPipeline->getPipelineLayout(), nullptr);
 
 		// Render pass
 		vkDestroyRenderPass(logicalDevice, renderPass->GetSceneRenderPass(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->GetShadowRenderPass(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->GetGeometryPassRenderPass(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->GetQuadRenderPass(), nullptr);
+		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAORenderPass(), nullptr);
+		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAOLightingRenderPass(), nullptr);
 
 		//Destroy swapchain image views
 		for (auto imageView : swapChainImagesViews) {
@@ -416,6 +445,7 @@ private:
 		//Texture resources destroy
 		vkDestroySampler(logicalDevice, ImageRes->getSampler(), nullptr);
 		vkDestroySampler(logicalDevice, ImageRes->GetSceneSampler(), nullptr);
+		vkDestroySampler(logicalDevice, ImageRes->GetRepeatSampler(), nullptr);
 
 		// Image 
 		vkDestroyImage(logicalDevice, ImageRes->getNormImage(), nullptr);

@@ -30,6 +30,13 @@ void DescriptorSetLayout::createDescriptorSetLayout() {
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding texutreLayoutBinding{};
+	texutreLayoutBinding.binding = 3;
+	texutreLayoutBinding.descriptorCount = 1;
+	texutreLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	texutreLayoutBinding.pImmutableSamplers = nullptr;
+	texutreLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	VkDescriptorSetLayoutBinding depthMapLayout{};
 	depthMapLayout.binding = 4;
 	depthMapLayout.descriptorCount = 1;
@@ -69,13 +76,35 @@ void DescriptorSetLayout::createDescriptorSetLayout() {
 	ssaoSampler.pImmutableSamplers = nullptr;
 	ssaoSampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	//Normals
+	VkDescriptorSetLayoutBinding NormalsTextureLayoutBinding{};
+	NormalsTextureLayoutBinding.binding = 9;
+	NormalsTextureLayoutBinding.descriptorCount = 1;
+	NormalsTextureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	NormalsTextureLayoutBinding.pImmutableSamplers = nullptr;
+	NormalsTextureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 8> binings = { uboLayoutBinding, LightLayoutBinding, samplerLayoutBinding, 
-		depthMapLayout, positionSampler, normalSampler, albedoSampler, ssaoSampler };
+	VkDescriptorSetLayoutBinding aoSampler{};
+	aoSampler.binding = 10;
+	aoSampler.descriptorCount = 1;
+	aoSampler.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	aoSampler.pImmutableSamplers = nullptr;
+	aoSampler.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding EmissionTextureLayoutBinding{};
+	EmissionTextureLayoutBinding.binding = 11;
+	EmissionTextureLayoutBinding.descriptorCount = 1;
+	EmissionTextureLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	EmissionTextureLayoutBinding.pImmutableSamplers = nullptr;
+	EmissionTextureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::array<VkDescriptorSetLayoutBinding, 12> binings = { uboLayoutBinding, LightLayoutBinding, samplerLayoutBinding, 
+		depthMapLayout, positionSampler, normalSampler, albedoSampler, ssaoSampler, texutreLayoutBinding,
+	NormalsTextureLayoutBinding, aoSampler, EmissionTextureLayoutBinding };
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 8;
+	layoutInfo.bindingCount = 12;
 	layoutInfo.pBindings = binings.data();
 
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {

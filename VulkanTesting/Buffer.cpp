@@ -243,7 +243,7 @@ void Buffer::updateUniformBuffers(uint32_t currentImage) {
 	//lighting.position.x = cos(glm::radians(spaceTime * 50.0f)) * 2.0f;
 	/*lighting.position.y = 3.0f + sin(glm::radians(spaceTime * 360.0f)) * 1.0f;
 	lighting.position.z = 5.0f + sin(glm::radians(spaceTime * 360.0f)) * 5.0f;*/
-	lighting.lightColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0);
+	lighting.lightColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0); //0.5f, 0.5f, 0.5f, 1.0
 
 	//Change lighting colours
 	/*lighting.lightColor.x = sin(glfwGetTime() * 2.0f);

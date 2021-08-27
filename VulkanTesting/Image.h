@@ -7,6 +7,31 @@
 #include <memory>
 #include <stb_image.h>
 
+namespace ImageTools {
+	struct imageInfo {
+		std::string DiffuseLocation;
+		std::vector<std::string> FileLocations = { DiffuseLocation };
+		VkImage textureImage;
+		VkImageView textureImageView;
+		VkDeviceMemory textureImageMemory;
+
+		std::string normalsFileLocation;
+		VkImage NormalsImage;
+		VkImageView NormalsImageView;
+		VkDeviceMemory NormalsImageMemory;
+
+		std::string AOFileLocation;
+		VkImage AOImage;
+		VkImageView AOImageView;
+		VkDeviceMemory AOImageMemory;
+
+		std::string EmissionFileLocation;
+		VkImage EmissionImage;
+		VkImageView EmissionImageView;
+		VkDeviceMemory EmissionImageMemory;
+	};
+}
+
 class ImageResource {
 public:
 	ImageResource(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkPhysicalDevice physicalDevice,
@@ -14,7 +39,7 @@ public:
 	ImageResource(VkPhysicalDevice physicalDevice);
 	ImageResource() = default;
 
-	void createTextureImage();
+	void createTextureImage(ImageTools::imageInfo& imageInfo);
 
 	void createImage(uint32_t width, uint32_t height, VkFormat format,
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,

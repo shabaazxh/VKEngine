@@ -51,7 +51,10 @@ public:
 		VkPipelineLayout SSAOLightingPipelineLayout,
 		std::vector<VkDescriptorSet> SSAOLightingDescriptorSet,
 		VkFramebuffer SSAOLightingFramebuffer,
-		VkRenderPass SSAOLightingRenderPass);
+		VkRenderPass SSAOLightingRenderPass,
+		VkPipeline FloorPipeline,
+		VkPipelineLayout FloorPipelineLayout,
+		std::vector<VkDescriptorSet> FloorDescriptorSet);
 
 	void createCommandBuffers();
 
@@ -121,5 +124,10 @@ private:
 	std::vector<VkDescriptorSet> SSAOLightingDescriptorSet;
 	VkFramebuffer SSAOLightingFramebuffer;
 	VkRenderPass SSAOLightingRenderPass;
+
+	VkPipeline FloorPipeline;
+	VkPipelineLayout FloorPipelineLayout;
+
+	std::vector<VkDescriptorSet> FloorDescriptorSet;
 
 };

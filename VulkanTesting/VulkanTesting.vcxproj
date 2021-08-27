@@ -70,6 +70,7 @@
     <ProjectGuid>{d7829325-724d-4d5b-ae1d-ef2376fd347d}</ProjectGuid>
     <RootNamespace>VulkanTesting</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>VulkanTesting</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

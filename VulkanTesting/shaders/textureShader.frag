@@ -13,8 +13,6 @@ layout(binding = 2) uniform sampler2D texSampler;
 layout(binding = 3) uniform sampler2D DiffuseTexture;
 layout(binding = 4) uniform sampler2D shadowMap;
 layout(binding = 9) uniform sampler2D NormalTexture;
-layout(binding = 10) uniform sampler2D AOTexture;
-layout(binding = 11) uniform sampler2D EmissionTexture;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec4 FragPos;
@@ -62,12 +60,13 @@ void main() {
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(1.0);
 
-    vec3 ambient = 0.3 * texture(AOTexture, fragTexCoord).rgb * texture(DiffuseTexture, fragTexCoord).rgb;
+    vec3 ambient = 0.3 * color;
     
     //Diffuse
     vec3 lightDir = normalize(LightUBO.position.xyz - FragPos.xyz);
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * LightUBO.lightColor.xyz * texture(DiffuseTexture, fragTexCoord).rgb;
+    //vec3 diffuse = diff * LightUBO.lightColor.xyz;
+    vec3 diffuse = diff * pow(texture(DiffuseTexture, fragTexCoord).rgb, vec3(gamma));
 
     // specular
     vec3 viewDir = normalize(LightUBO.viewPos.xyz - FragPos.xyz);
@@ -75,7 +74,8 @@ void main() {
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * LightUBO.lightColor.xyz * vec3(texture(NormalTexture, fragTexCoord));
+    //vec3 specular = spec * LightUBO.lightColor.xyz;
+    vec3 specular = spec * pow(texture(NormalTexture, fragTexCoord).rgb, vec3(gamma));
 
     //attenuation
     float max_distance = 1.5;
@@ -85,12 +85,11 @@ void main() {
     diffuse *= attenuation;
     specular *= attenuation;
 
-    vec3 emission = texture(EmissionTexture, fragTexCoord).rgb;
-
     float shadow = ShadowCalculation(FragPosLightSpace);
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular + emission)) * color;
 
-    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+
+   // lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 
     outColor = vec4(lighting, 1.0);
 }
