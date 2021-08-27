@@ -34,7 +34,10 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	VkPipelineLayout SSAOLightingPipelineLayout,
 	std::vector<VkDescriptorSet> SSAOLightingDescriptorSet,
 	VkFramebuffer SSAOLightingFramebuffer,
-	VkRenderPass SSAOLightingRenderPass){
+	VkRenderPass SSAOLightingRenderPass,
+	VkPipeline FloorPipeline,
+	VkPipelineLayout FloorPipelineLayout,
+	std::vector<VkDescriptorSet> FloorDescriptorSet){
 
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
@@ -79,6 +82,9 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->SSAOLightingDescriptorSet = SSAOLightingDescriptorSet;
 	this->SSAOLightingFramebuffer = SSAOLightingFramebuffer;
 	this->SSAOLightingRenderPass = SSAOLightingRenderPass;
+	this->FloorPipeline = FloorPipeline;
+	this->FloorPipelineLayout = FloorPipelineLayout;
+	this->FloorDescriptorSet = FloorDescriptorSet;
 }
 
 void CommandBuffers::createCommandBuffers() {
@@ -160,6 +166,8 @@ void CommandBuffers::createCommandBuffers() {
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
 		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
 		
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipelineLayout, 0, 1, &FloorDescriptorSet[i], 0, nullptr);
 		//Floor model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, FloorVertex, offsets3);
 		vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);

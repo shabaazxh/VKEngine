@@ -1,6 +1,9 @@
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shader.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shader.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv
 
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.vert.spv
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.frag.spv
+
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.vert.spv
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.frag.spv
 
