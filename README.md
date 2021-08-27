@@ -7,7 +7,7 @@ Since this is my first attempt at building an engine using Vulkan, there might b
 and will be availble to view in the **Development** branch.
 
 **Install**
-* [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+* [VulkanSDK](https://vulkan.lunarg.com/sdk/home)
 
 **Externals**:
 * [GLFW](https://www.glfw.org/)
