@@ -7,6 +7,6 @@ Since this is my first attempt at building an engine using Vulkan, there might b
 and will be availble to view in the **Development** branch.
 
 ** Externals:
-[GLFW]https://www.glfw.org/
+[GLFW](https://www.glfw.org/)
 
 ![Running Instance of current engine](pictures/RunninEngineGam.PNG)
