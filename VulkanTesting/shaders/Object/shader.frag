@@ -62,12 +62,12 @@ void main() {
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(1.0);
 
-    vec3 ambient = 0.3 * texture(AOTexture, fragTexCoord).rgb * texture(DiffuseTexture, fragTexCoord).rgb;
+    vec3 ambient = 0.3 * color;
     
     //Diffuse
     vec3 lightDir = normalize(LightUBO.position.xyz - FragPos.xyz);
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * LightUBO.lightColor.xyz * texture(DiffuseTexture, fragTexCoord).rgb;
+    vec3 diffuse = diff * LightUBO.lightColor.xyz;
 
     // specular
     vec3 viewDir = normalize(LightUBO.viewPos.xyz - FragPos.xyz);
@@ -75,7 +75,7 @@ void main() {
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * LightUBO.lightColor.xyz * vec3(texture(NormalTexture, fragTexCoord));
+    vec3 specular = spec * LightUBO.lightColor.xyz;
 
     //attenuation
     float max_distance = 1.5;
@@ -88,7 +88,7 @@ void main() {
     vec3 emission = texture(EmissionTexture, fragTexCoord).rgb;
 
     float shadow = ShadowCalculation(FragPosLightSpace);
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular + emission)) * color;
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 

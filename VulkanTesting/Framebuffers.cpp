@@ -133,7 +133,7 @@ void Framebuffers::createSSAOQuadFrameBuffer(VkRenderPass SSAORenderPass, VkImag
 }
 
 
-void Framebuffers::createSSAOLightingQuadFrameBuffer(VkRenderPass SSAOLightRenderPass, VkImageView SSAOLightImageView) {
+void Framebuffers::createSSAOBlurQuadFrameBuffer(VkRenderPass SSAOLightRenderPass, VkImageView SSAOLightImageView) {
 	
 	std::array<VkImageView, 1> attachments = { SSAOLightImageView };
 
@@ -146,7 +146,7 @@ void Framebuffers::createSSAOLightingQuadFrameBuffer(VkRenderPass SSAOLightRende
 	frameBufferInfo.height = swapChainExtent.height;
 	frameBufferInfo.layers = 1;
 
-	if (vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &SSAOLightingFramebuffer) != VK_SUCCESS) {
+	if (vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &SSAOBlurFramebuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create shadow framebuffer!");
 	}
 }

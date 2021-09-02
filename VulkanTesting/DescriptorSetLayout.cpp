@@ -191,7 +191,7 @@ void DescriptorSetLayout::createSSAODescriptorSetLayout() {
 }
 
 
-void DescriptorSetLayout::createSSAOLightingDescriptorSetLayout() {
+void DescriptorSetLayout::createSSAOBlurDescriptorSetLayout() {
 
 	VkDescriptorSetLayoutBinding positionSampler{};
 	positionSampler.binding = 1;
@@ -243,7 +243,7 @@ void DescriptorSetLayout::createSSAOLightingDescriptorSetLayout() {
 	layoutInfo.bindingCount = 6;
 	layoutInfo.pBindings = binings.data();
 
-	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &SSAOLightingLayout) != VK_SUCCESS) {
+	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &SSAOBlurLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create SSAO Lighting descriptor set layout!");
 	}
 }

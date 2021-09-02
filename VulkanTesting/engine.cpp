@@ -104,7 +104,7 @@ private:
 
 	//Instance class
 	std::unique_ptr<Pipeline> SSAOQuadPipeline;
-	std::unique_ptr<Pipeline> SSAOLightingPipeline;
+	std::unique_ptr<Pipeline> SSAOBlurPipeline;
 	std::unique_ptr<Pipeline> QuadPipeline;
 	std::unique_ptr<Pipeline> pipeline;
 	std::unique_ptr<Pipeline> shadowPipeline;
@@ -165,34 +165,34 @@ private:
 
 		renderPass->createSSAORenderPass();
 
-		renderPass->createSSAOLightingRenderPass();
+		renderPass->createSSAOBlurRenderPass();
 
 		descriptorSetLayout = std::make_unique<DescriptorSetLayout>(logicalDevice);
 		descriptorSetLayout->createDescriptorSetLayout();
 		descriptorSetLayout->createQuadDescriptorSetLayout();
 		descriptorSetLayout->createSSAODescriptorSetLayout();
-		descriptorSetLayout->createSSAOLightingDescriptorSetLayout();
+		descriptorSetLayout->createSSAOBlurDescriptorSetLayout();
 
 		GeometryPassPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetGeometryPassRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		GeometryPassPipeline->createGeometryPassGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao_geometry.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao_geometry.frag.spv");
+		GeometryPassPipeline->createGeometryPassGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/GeometryPass/ssao_geometry.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/GeometryPass/ssao_geometry.frag.spv");
 
 		SSAOQuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAORenderPass(), swapChainExtent, descriptorSetLayout->GetSSAODescriptorSetLayout());
-		SSAOQuadPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/SSAOQuad.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/SSAOQuad.frag.spv");
+		SSAOQuadPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag.spv");
 
-		SSAOLightingPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAOLightingRenderPass(), swapChainExtent, descriptorSetLayout->GetSSAOLightingDescriptorSetLayout());
-		SSAOLightingPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/SSAOLighting.vert.spv","C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/SSAOLighting.frag.spv");
+		SSAOBlurPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAOBlurRenderPass(), swapChainExtent, descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
+		SSAOBlurPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOBlur.vert.spv","C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOBlur.frag.spv");
 
 		QuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetQuadRenderPass(), swapChainExtent, descriptorSetLayout->GetQuadDescriptorSetLayout());
 		QuadPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/quad.vert.spv","C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/quad.frag.spv");
 
 		shadowPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetShadowRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		shadowPipeline->createGraphicsPipelineSingleShader("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.vert.spv");
+		shadowPipeline->createGraphicsPipelineSingleShader("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow/shadow.vert.spv");
 
 		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
+		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/frag.spv");
 
 		FloorPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		FloorPipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/textureShader.frag.spv");
+		FloorPipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/textureShader.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/textureShader.frag.spv");
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
@@ -210,25 +210,25 @@ private:
 
 		frameBuffers->createDisplaySceneFramebuffer(renderPass->GetSceneRenderPass(), ImageRes->GetSceneImageView(), ImageRes->getDepthImageView());
 
-		frameBuffers->createGeometryPassFrameBuffer(renderPass->GetGeometryPassRenderPass(), ImageRes->GetGeometryImageView(), ImageRes->GetPositionImageView(), ImageRes->GetNormalImageView(), ImageRes->GetAlbedoImageView(), ImageRes->getDepthImageView());
+		frameBuffers->createGeometryPassFrameBuffer(renderPass->GetGeometryPassRenderPass(), ImageRes->GetGeometryImageView(), ImageRes->GetPositionImageView(), ImageRes->GetgNormalsImageView(), ImageRes->GetAlbedoImageView(), ImageRes->getDepthImageView());
 
 		frameBuffers->createSSAOQuadFrameBuffer(renderPass->GetSSAORenderPass(), ImageRes->GetSSAOImageView());
 
-		frameBuffers->createSSAOLightingQuadFrameBuffer(renderPass->GetSSAOLightingRenderPass(), ImageRes->GetSSAOLightingImageView());
+		frameBuffers->createSSAOBlurQuadFrameBuffer(renderPass->GetSSAOBlurRenderPass(), ImageRes->GetSSAOBlurImageView());
 
 
 		ImageTools::imageInfo F1Image{};
-		F1Image.DiffuseLocation = "C:/Users/Shahb/Desktop/damaged-helmet/source/Default_albedo.jpg";
-		F1Image.normalsFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_metal.jpeg";
-		F1Image.AOFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_AO.jpeg";
-		F1Image.EmissionFileLocation = "C:/Users/Shahb/Desktop/damaged-helmet/textures/Default_emissive.jpeg";
+		F1Image.DiffuseLocation = "C:/Users/Shahb/Desktop/white.png";
+		F1Image.specularLocation = "C:/Users/Shahb/Desktop/white.png";
+		F1Image.AOLocation = "C:/Users/Shahb/Desktop/white.png";
+		F1Image.EmissionLocation = "C:/Users/Shahb/Desktop/white.png";
 		ImageRes->createTextureImage(F1Image);
 
 		ImageTools::imageInfo FloorImageInfo{};
 		FloorImageInfo.DiffuseLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.normalsFileLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.AOFileLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.EmissionFileLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.specularLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.AOLocation = "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.EmissionLocation= "C:/Users/Shahb/Desktop/white.png";
 
 		ImageRes->createTextureImage(FloorImageInfo);
 
@@ -242,7 +242,7 @@ private:
 		SecondModel = std::make_unique <Object>();
 		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
 	
-		objectData->loadModel("C:/Users/Shahb/Desktop/damaged-helmet/source/DamagedHelmet.obj"); //f1_onthefloor f1carwithcubes
+		objectData->loadModel("C:/Users/Shahb/Desktop/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
 		SecondModel->loadModel("C:/Users/Shahb/Desktop/floor.obj");
 
 		buffers->createVertexBuffer(sizeof(objectData->getVertexData()[0]) * objectData->getVertexData().size(), objectData->getVertexData());
@@ -271,7 +271,7 @@ private:
 			descriptorSetLayout->getDescriptorSetLayout(),
 			descriptorSetLayout->GetQuadDescriptorSetLayout(),
 			descriptorSetLayout->GetSSAODescriptorSetLayout(),
-			descriptorSetLayout->GetSSAOLightingDescriptorSetLayout(),
+			descriptorSetLayout->GetSSAOBlurDescriptorSetLayout(),
 			ImageRes->GetSSAOImageView(),
 			ImageRes->GetAlbedoImageView(),
 			ImageRes->GetSSAOSamplingImageView(),
@@ -279,20 +279,20 @@ private:
 			ImageRes->getNormImageView(),
 			ImageRes->getshadowImageView(),
 			ImageRes->GetPositionImageView(),
-			ImageRes->GetNormalImageView(),
+			ImageRes->GetgNormalsImageView(),
 			ImageRes->GetNoiseImageView(),
-			ImageRes->GetSSAOLightingImageView(),
+			ImageRes->GetSSAOBlurImageView(),
 			ImageRes->GetGeometryImageView(),
 			ImageRes->getSampler(),
 			ImageRes->GetSceneSampler(),
 			ImageRes->GetSceneImageView(),
 			ImageRes->GetRepeatSampler(),
 			F1Image.textureImageView,
-			F1Image.NormalsImageView,
+			F1Image.specularImageView,
 			FloorObjectBuffer->getUniformBuffers(),
 			FloorObjectBuffer->getLightBuffers(),
 			FloorImageInfo.textureImageView,
-			FloorImageInfo.NormalsImageView,
+			FloorImageInfo.specularImageView,
 			F1Image.AOImageView,
 			F1Image.EmissionImageView);
 
@@ -339,11 +339,11 @@ private:
 			renderPass->GetSSAORenderPass(),
 			frameBuffers->GetSSAOFramebuffer(),
 			descriptors->GetSSAODescriptorSets(),
-			SSAOLightingPipeline->getGraphicsPipeline(),
-			SSAOLightingPipeline->getPipelineLayout(),
-			descriptors->GetSSAOLightingDescriptorSets(),
-			frameBuffers->GetSSAOLightingFramebuffer(),
-			renderPass->GetSSAOLightingRenderPass(),
+			SSAOBlurPipeline->getGraphicsPipeline(),
+			SSAOBlurPipeline->getPipelineLayout(),
+			descriptors->GetSSAOBlurDescriptorSets(),
+			frameBuffers->GetSSAOBlurFramebuffer(),
+			renderPass->GetSSAOBlurRenderPass(),
 			FloorPipeline->getGraphicsPipeline(),
 			FloorPipeline->getPipelineLayout(),
 			descriptors->GetFloorDescriptorSet());
@@ -385,7 +385,7 @@ private:
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetGeometryPassFrameBuffer(), nullptr);
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSceneFrameBuffer(), nullptr);
 		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOFramebuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOLightingFramebuffer(), nullptr);
+		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOBlurFramebuffer(), nullptr);
 
 		//Free command buffers 
 		vkFreeCommandBuffers(logicalDevice, commandPool->getCommandPool(), static_cast<uint32_t>(commandBuffers->getCommandBuffers
@@ -397,7 +397,7 @@ private:
 		vkDestroyPipeline(logicalDevice, FloorPipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipeline(logicalDevice, QuadPipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipeline(logicalDevice, GeometryPassPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, SSAOLightingPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(logicalDevice, SSAOBlurPipeline->getGraphicsPipeline(), nullptr);
 		vkDestroyPipeline(logicalDevice, SSAOQuadPipeline->getGraphicsPipeline(), nullptr);
 
 
@@ -407,7 +407,7 @@ private:
 		vkDestroyPipelineLayout(logicalDevice, FloorPipeline->getPipelineLayout(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, QuadPipeline->getPipelineLayout(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, GeometryPassPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, SSAOLightingPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(logicalDevice, SSAOBlurPipeline->getPipelineLayout(), nullptr);
 		vkDestroyPipelineLayout(logicalDevice, SSAOQuadPipeline->getPipelineLayout(), nullptr);
 
 		// Render pass
@@ -416,7 +416,7 @@ private:
 		vkDestroyRenderPass(logicalDevice, renderPass->GetGeometryPassRenderPass(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->GetQuadRenderPass(), nullptr);
 		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAORenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAOLightingRenderPass(), nullptr);
+		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAOBlurRenderPass(), nullptr);
 
 		//Destroy swapchain image views
 		for (auto imageView : swapChainImagesViews) {

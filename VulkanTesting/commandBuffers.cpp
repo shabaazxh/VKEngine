@@ -30,11 +30,11 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	VkRenderPass SSAOQuadRenderPass,
 	VkFramebuffer SSAOQuadFramebuffer,
 	std::vector<VkDescriptorSet> SSAODescriptorSets,
-	VkPipeline SSAOLightingPipeline,
-	VkPipelineLayout SSAOLightingPipelineLayout,
-	std::vector<VkDescriptorSet> SSAOLightingDescriptorSet,
-	VkFramebuffer SSAOLightingFramebuffer,
-	VkRenderPass SSAOLightingRenderPass,
+	VkPipeline SSAOBlurPipeline,
+	VkPipelineLayout SSAOBlurPipelineLayout,
+	std::vector<VkDescriptorSet> SSAOBlurDescriptorSet,
+	VkFramebuffer SSAOBlurFramebuffer,
+	VkRenderPass SSAOBlurRenderPass,
 	VkPipeline FloorPipeline,
 	VkPipelineLayout FloorPipelineLayout,
 	std::vector<VkDescriptorSet> FloorDescriptorSet){
@@ -77,11 +77,11 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->SSAOQuadRenderPass = SSAOQuadRenderPass;
 	this->SSAOQuadFramebuffer = SSAOQuadFramebuffer;
 	this->SSAODescriptorSets = SSAODescriptorSets;
-	this->SSAOLightingPipeline = SSAOLightingPipeline;
-	this->SSAOLightingPipelineLayout = SSAOLightingPipelineLayout;
-	this->SSAOLightingDescriptorSet = SSAOLightingDescriptorSet;
-	this->SSAOLightingFramebuffer = SSAOLightingFramebuffer;
-	this->SSAOLightingRenderPass = SSAOLightingRenderPass;
+	this->SSAOBlurPipeline = SSAOBlurPipeline;
+	this->SSAOBlurPipelineLayout = SSAOBlurPipelineLayout;
+	this->SSAOBlurDescriptorSet = SSAOBlurDescriptorSet;
+	this->SSAOBlurFramebuffer = SSAOBlurFramebuffer;
+	this->SSAOBlurRenderPass = SSAOBlurRenderPass;
 	this->FloorPipeline = FloorPipeline;
 	this->FloorPipelineLayout = FloorPipelineLayout;
 	this->FloorDescriptorSet = FloorDescriptorSet;
@@ -239,30 +239,30 @@ void CommandBuffers::createCommandBuffers() {
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
-		/** -----------------------------  SSAO Lighting QUAD Render -------------------------- */
+		/** -----------------------------  SSAO Blur QUAD Render -------------------------- */
 
-		VkRenderPassBeginInfo SSAOLightingQuadRenderPassInfo{};
-		SSAOLightingQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		SSAOLightingQuadRenderPassInfo.renderPass = SSAOLightingRenderPass;
-		SSAOLightingQuadRenderPassInfo.framebuffer = SSAOLightingFramebuffer;
-		SSAOLightingQuadRenderPassInfo.renderArea.offset = { 0,0 };
-		SSAOLightingQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+		VkRenderPassBeginInfo SSAOBlurQuadRenderPassInfo{};
+		SSAOBlurQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		SSAOBlurQuadRenderPassInfo.renderPass = SSAOBlurRenderPass;
+		SSAOBlurQuadRenderPassInfo.framebuffer = SSAOBlurFramebuffer;
+		SSAOBlurQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		SSAOBlurQuadRenderPassInfo.renderArea.extent = swapChainExtent;
 
-		std::array<VkClearValue, 1> SSAOLightingQuadClearValues{};
-		SSAOLightingQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		std::array<VkClearValue, 1> SSAOBlurQuadClearValues{};
+		SSAOBlurQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		SSAOLightingQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOLightingQuadClearValues.size());
-		SSAOLightingQuadRenderPassInfo.pClearValues = SSAOLightingQuadClearValues.data();
+		SSAOBlurQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOBlurQuadClearValues.size());
+		SSAOBlurQuadRenderPassInfo.pClearValues = SSAOBlurQuadClearValues.data();
 
-		vkCmdBeginRenderPass(commandBuffers[i], &SSAOLightingQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[i], &SSAOBlurQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkBuffer SSAOLightingQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
-		VkDeviceSize SSAOLightingQuadOffSet[] = { 0 };
+		VkBuffer SSAOBlurQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
+		VkDeviceSize SSAOBlurQuadOffSet[] = { 0 };
 
 		// SSAO Quad render
-		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOLightingPipeline);
-		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOLightingPipelineLayout, 0, 1, &SSAOLightingDescriptorSet[i], 0, nullptr);
-		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOLightingQuadVertexBufferArr, SSAOLightingQuadOffSet);
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipelineLayout, 0, 1, &SSAOBlurDescriptorSet[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOBlurQuadVertexBufferArr, SSAOBlurQuadOffSet);
 		vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
