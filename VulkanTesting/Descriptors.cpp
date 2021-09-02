@@ -12,12 +12,12 @@ Descriptors::Descriptors(
 	VkDescriptorSetLayout descriptorSetLayout,
 	VkDescriptorSetLayout sceneDescriptorSetLayout,
 	VkDescriptorSetLayout SSAOLayout,
-	VkDescriptorSetLayout SSAOLightingLayout,
+	VkDescriptorSetLayout SSAOBlurLayout,
 	VkImageView SSAOImageView,
 	VkImageView AlbedoImageView,
 	VkImageView ssaoSamplingImageView,
 	VkImageView textureImageView, 
-	VkImageView normImageView,
+	VkImageView specImageView,
 	VkImageView shadowImageView, 
 	VkImageView positionImageView,
 	VkImageView normalImageView,
@@ -29,7 +29,7 @@ Descriptors::Descriptors(
 	VkImageView sceneImageView,
 	VkSampler RepeatSampler,
 	VkImageView DiffuseTextureImageView,
-	VkImageView NormalsTextureImageView,
+	VkImageView specTextureImageView,
 	std::vector<VkBuffer> FloorUniformBuffer,
 	std::vector<VkBuffer> FloorLightBuffer,
 	VkImageView FloorDiffuseTexture,
@@ -57,14 +57,14 @@ Descriptors::Descriptors(
 	this->normalImageView = normalImageView;
 	this->noiseImageView = noiseImageView;
 	this->kernelBuffers = kernelBuffers;
-	this->SSAOLightingLayout = SSAOLightingLayout;
+	this->SSAOBlurLayout = SSAOBlurLayout;
 	this->AlbedoImageView = AlbedoImageView;
 	this->ssaoSamplingImageView = ssaoSamplingImageView;
 	this->SSAOLightImageView = SSAOLightImageView;
 	this->GeoImageView = GeoImageView;
 	this->RepeatSampler = RepeatSampler;
 	this->DiffuseTextureImageView = DiffuseTextureImageView;
-	this->NormalsTextureImageView = NormalsTextureImageView;
+	this->specTextureImageView = specTextureImageView;
 	this->FloorDiffuseTexture = FloorDiffuseTexture;
 	this->FloorSpecTexture = FloorSpecTexture;
 	this->AOTextureView = AOTextureView;
@@ -95,7 +95,7 @@ void Descriptors::createDescriptorSets() {
 	std::vector<VkDescriptorSetLayout> layouts(swapChainImages.size(), descriptorSetLayout);
 	std::vector<VkDescriptorSetLayout> SceneLayout(swapChainImages.size(), sceneDescriptorSetLayout);
 	std::vector<VkDescriptorSetLayout> SSAODescriptorLayoutInfo(swapChainImages.size(), SSAOLayout);
-	std::vector<VkDescriptorSetLayout> SSAOLightingDescriptorLayoutInfo(swapChainImages.size(), SSAOLightingLayout);
+	std::vector<VkDescriptorSetLayout> SSAOBlurDescriptorLayoutInfo(swapChainImages.size(), SSAOBlurLayout);
 
 
 	VkDescriptorSetAllocateInfo allocInfo{};
@@ -119,16 +119,16 @@ void Descriptors::createDescriptorSets() {
 	ssaoDescriptorSetAlloc.pSetLayouts = SSAODescriptorLayoutInfo.data();
 
 	// SSAO descriptor set
-	VkDescriptorSetAllocateInfo ssaoLightingDescriptorSetAlloc{};
-	ssaoLightingDescriptorSetAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	ssaoLightingDescriptorSetAlloc.descriptorPool = descriptorPool;
-	ssaoLightingDescriptorSetAlloc.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
-	ssaoLightingDescriptorSetAlloc.pSetLayouts = SSAOLightingDescriptorLayoutInfo.data();
+	VkDescriptorSetAllocateInfo SSAOBlurDescriptorSetAlloc{};
+	SSAOBlurDescriptorSetAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	SSAOBlurDescriptorSetAlloc.descriptorPool = descriptorPool;
+	SSAOBlurDescriptorSetAlloc.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+	SSAOBlurDescriptorSetAlloc.pSetLayouts = SSAOBlurDescriptorLayoutInfo.data();
 
 	descriptorSets.resize(swapChainImages.size());
 	sceneDescriptorSets.resize(swapChainImages.size());
 	SSAODescritporSets.resize(swapChainImages.size());
-	SSAOLightingDescritporSets.resize(swapChainImages.size());
+	SSAOBlurDescritporSets.resize(swapChainImages.size());
 	FloorDescriptorSet.resize(swapChainImages.size());
 
 	if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS) {
@@ -143,7 +143,7 @@ void Descriptors::createDescriptorSets() {
 		throw std::runtime_error("failed to allocate SSAO descriptor sets!");
 	}
 
-	if (vkAllocateDescriptorSets(device, &ssaoLightingDescriptorSetAlloc, SSAOLightingDescritporSets.data()) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(device, &SSAOBlurDescriptorSetAlloc, SSAOBlurDescritporSets.data()) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate SSAO descriptor sets!");
 	}
 
@@ -173,13 +173,13 @@ void Descriptors::createDescriptorSets() {
 		VkDescriptorImageInfo DiffuseTextureInfo{};
 		DiffuseTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		DiffuseTextureInfo.imageView = DiffuseTextureImageView;
-		DiffuseTextureInfo.sampler = RepeatSampler;
+		DiffuseTextureInfo.sampler = textureSampler;
 
-		// Normals texture here
-		VkDescriptorImageInfo NormalsTextureInfo{};
-		NormalsTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		NormalsTextureInfo.imageView = NormalsTextureImageView;
-		NormalsTextureInfo.sampler = RepeatSampler;
+		// Specular texture here
+		VkDescriptorImageInfo SpecularTextureInfo{};
+		SpecularTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		SpecularTextureInfo.imageView = specTextureImageView;
+		SpecularTextureInfo.sampler = RepeatSampler;
 
 		VkDescriptorImageInfo AOTextureInfo{};
 		AOTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -226,7 +226,7 @@ void Descriptors::createDescriptorSets() {
 		NormalsTextureDescriptorWrite.dstArrayElement = 0;
 		NormalsTextureDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		NormalsTextureDescriptorWrite.descriptorCount = 1;
-		NormalsTextureDescriptorWrite.pImageInfo = &NormalsTextureInfo;
+		NormalsTextureDescriptorWrite.pImageInfo = &SpecularTextureInfo;
 
 		VkWriteDescriptorSet AOTextureDescriptorWrite{};
 		AOTextureDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -293,10 +293,10 @@ void Descriptors::createDescriptorSets() {
 		AOTextureInfo.sampler = RepeatSampler;
 
 		// Normals texture here
-		VkDescriptorImageInfo NormalsTextureInfo{};
-		NormalsTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		NormalsTextureInfo.imageView = FloorSpecTexture;
-		NormalsTextureInfo.sampler = RepeatSampler;
+		VkDescriptorImageInfo specTextureInfo{};
+		specTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		specTextureInfo.imageView = FloorSpecTexture;
+		specTextureInfo.sampler = RepeatSampler;
 
 		VkDescriptorImageInfo EmissionTextureInfo{};
 		EmissionTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -338,7 +338,7 @@ void Descriptors::createDescriptorSets() {
 		NormalsTextureDescriptorWrite.dstArrayElement = 0;
 		NormalsTextureDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		NormalsTextureDescriptorWrite.descriptorCount = 1;
-		NormalsTextureDescriptorWrite.pImageInfo = &NormalsTextureInfo;
+		NormalsTextureDescriptorWrite.pImageInfo = &specTextureInfo;
 
 		VkWriteDescriptorSet AOTextureDescriptorWrite{};
 		AOTextureDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -520,7 +520,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet positionSamplerDescriptorWrite{};
 		positionSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		positionSamplerDescriptorWrite.dstSet = SSAOLightingDescritporSets[i];
+		positionSamplerDescriptorWrite.dstSet = SSAOBlurDescritporSets[i];
 		positionSamplerDescriptorWrite.dstBinding = 1;
 		positionSamplerDescriptorWrite.dstArrayElement = 0;
 		positionSamplerDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -529,7 +529,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet normalSamplerDescriptorWrite{};
 		normalSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		normalSamplerDescriptorWrite.dstSet = SSAOLightingDescritporSets[i];
+		normalSamplerDescriptorWrite.dstSet = SSAOBlurDescritporSets[i];
 		normalSamplerDescriptorWrite.dstBinding = 2;
 		normalSamplerDescriptorWrite.dstArrayElement = 0;
 		normalSamplerDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -538,7 +538,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet albedoSamplerDescriptorWrite{};
 		albedoSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		albedoSamplerDescriptorWrite.dstSet = SSAOLightingDescritporSets[i];
+		albedoSamplerDescriptorWrite.dstSet = SSAOBlurDescritporSets[i];
 		albedoSamplerDescriptorWrite.dstBinding = 3;
 		albedoSamplerDescriptorWrite.dstArrayElement = 0;
 		albedoSamplerDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -547,7 +547,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet ssaoSamplerDescriptorWrite{};
 		ssaoSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		ssaoSamplerDescriptorWrite.dstSet = SSAOLightingDescritporSets[i];
+		ssaoSamplerDescriptorWrite.dstSet = SSAOBlurDescritporSets[i];
 		ssaoSamplerDescriptorWrite.dstBinding = 4;
 		ssaoSamplerDescriptorWrite.dstArrayElement = 0;
 		ssaoSamplerDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -556,7 +556,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet LightSamplerDescriptorWrite{};
 		LightSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		LightSamplerDescriptorWrite.dstSet = SSAOLightingDescritporSets[i];
+		LightSamplerDescriptorWrite.dstSet = SSAOBlurDescritporSets[i];
 		LightSamplerDescriptorWrite.dstBinding = 5;
 		LightSamplerDescriptorWrite.dstArrayElement = 0;
 		LightSamplerDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

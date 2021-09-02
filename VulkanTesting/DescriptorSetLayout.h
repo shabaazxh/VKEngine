@@ -20,15 +20,15 @@ public:
 	void createSSAODescriptorSetLayout();
 	VkDescriptorSetLayout GetSSAODescriptorSetLayout() { return SSAOLayout; }
 
-	void createSSAOLightingDescriptorSetLayout();
-	VkDescriptorSetLayout GetSSAOLightingDescriptorSetLayout() { return SSAOLightingLayout; }
+	void createSSAOBlurDescriptorSetLayout();
+	VkDescriptorSetLayout GetSSAOBlurDescriptorSetLayout() { return SSAOBlurLayout; }
 
 
 private:
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout QuadDescriptorSetLayout;
 	VkDescriptorSetLayout SSAOLayout;
-	VkDescriptorSetLayout SSAOLightingLayout;
+	VkDescriptorSetLayout SSAOBlurLayout;
 
 	std::vector<VkImage> swapChainImages;
 	VkDevice device;

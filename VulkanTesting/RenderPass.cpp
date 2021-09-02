@@ -273,7 +273,7 @@ void RenderPass::createSSAORenderPass() {
 	}
 }
 
-void RenderPass::createSSAOLightingRenderPass() {
+void RenderPass::createSSAOBlurRenderPass() {
 
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapChainImageFormat;
@@ -313,7 +313,7 @@ void RenderPass::createSSAOLightingRenderPass() {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &SSAOLightingRenderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &SSAOBlurRenderPass) != VK_SUCCESS) {
 		std::runtime_error("failed to create render pass!");
 	}
 }

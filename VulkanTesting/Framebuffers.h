@@ -16,7 +16,7 @@ public:
 		VkImageView normalImageView, VkImageView albedoImageView, VkImageView depthImageView);
 	
 	void createSSAOQuadFrameBuffer(VkRenderPass SSAORenderPass, VkImageView SSAOImageView);
-	void createSSAOLightingQuadFrameBuffer(VkRenderPass SSAOLightRenderPass, VkImageView SSAOLightImageView);
+	void createSSAOBlurQuadFrameBuffer(VkRenderPass SSAOLightRenderPass, VkImageView SSAOLightImageView);
 
 	std::vector<VkFramebuffer> getSwapChainFramebuffers() { return swapChainFramebuffers; }
 	VkFramebuffer GetDisplaySceneFramebuffer() { return displaySceneFramebuffer; }
@@ -28,7 +28,7 @@ public:
 	VkFramebuffer GetSceneFrameBuffer() { return SceneFrameBuffer; }
 	VkFramebuffer GetGeometryPassFrameBuffer() { return GeometryPassFrameBuffer; }
 	VkFramebuffer GetSSAOFramebuffer() { return SSAOFramebuffer; }
-	VkFramebuffer GetSSAOLightingFramebuffer() { return SSAOLightingFramebuffer; }
+	VkFramebuffer GetSSAOBlurFramebuffer() { return SSAOBlurFramebuffer; }
 
 
 private:
@@ -40,7 +40,7 @@ private:
 	VkFramebuffer SceneFrameBuffer;
 	VkFramebuffer GeometryPassFrameBuffer;
 	VkFramebuffer SSAOFramebuffer;
-	VkFramebuffer SSAOLightingFramebuffer;
+	VkFramebuffer SSAOBlurFramebuffer;
 
 	VkRenderPass renderPass;
 

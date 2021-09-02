@@ -15,7 +15,7 @@ public:
 		VkDescriptorSetLayout descriptorSetLayout,
 		VkDescriptorSetLayout sceneDescriptorSetLayout,
 		VkDescriptorSetLayout SSAOLayout,
-		VkDescriptorSetLayout SSAOLightingLayout,
+		VkDescriptorSetLayout SSAOBlurLayout,
 		VkImageView SSAOImageView,
 		VkImageView AlbedoImageView,
 		VkImageView ssaoSamplingImageView,
@@ -32,7 +32,7 @@ public:
 		VkImageView sceneImageView,
 		VkSampler RepeatSampler,
 		VkImageView DiffuseTextureImageView,
-		VkImageView NormalsTextureImageView,
+		VkImageView specTextureImageView,
 		std::vector<VkBuffer> FloorUniformBuffer,
 		std::vector<VkBuffer> FloorLightBuffer,
 		VkImageView FloorDiffuseTexture,
@@ -47,14 +47,14 @@ public:
 	std::vector<VkDescriptorSet> getDescriptorSets() { return descriptorSets; }
 	std::vector<VkDescriptorSet> GetSceneDescriptorSets() { return sceneDescriptorSets; }
 	std::vector<VkDescriptorSet> GetSSAODescriptorSets() { return SSAODescritporSets; }
-	std::vector<VkDescriptorSet> GetSSAOLightingDescriptorSets() { return SSAOLightingDescritporSets; }
+	std::vector<VkDescriptorSet> GetSSAOBlurDescriptorSets() { return SSAOBlurDescritporSets; }
 	std::vector<VkDescriptorSet> GetFloorDescriptorSet() { return FloorDescriptorSet; }
 
 private:
 	VkDevice device;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout sceneDescriptorSetLayout;
-	VkDescriptorSetLayout SSAOLightingLayout;
+	VkDescriptorSetLayout SSAOBlurLayout;
 
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkBuffer> LightBuffers;
@@ -69,7 +69,7 @@ private:
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> sceneDescriptorSets;
 	std::vector<VkDescriptorSet> SSAODescritporSets;
-	std::vector<VkDescriptorSet> SSAOLightingDescritporSets;
+	std::vector<VkDescriptorSet> SSAOBlurDescritporSets;
 	std::vector<VkDescriptorSet> FloorDescriptorSet;
 
 
@@ -99,7 +99,7 @@ private:
 	VkImageView GeoImageView;
 
 	VkImageView DiffuseTextureImageView;
-	VkImageView NormalsTextureImageView;
+	VkImageView specTextureImageView;
 
 	VkSampler RepeatSampler;
 

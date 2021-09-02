@@ -62,10 +62,10 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 		imageInfo.textureImageView = createImageView(imageInfo.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	// Normals
+	// Specular
 	{
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(imageInfo.normalsFileLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(imageInfo.specularLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -89,21 +89,21 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 
 		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.NormalsImage, imageInfo.NormalsImageMemory);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.specularImage, imageInfo.specularImageMemory);
 
-		transitionImageLayout(imageInfo.NormalsImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+		transitionImageLayout(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-		copyBufferToImage(stagingBuffer, imageInfo.NormalsImage,
+		copyBufferToImage(stagingBuffer, imageInfo.specularImage,
 			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-		transitionImageLayout(imageInfo.NormalsImage, VK_FORMAT_R8G8B8A8_SRGB,
+		transitionImageLayout(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 
-		imageInfo.NormalsImageView = createImageView(imageInfo.NormalsImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		imageInfo.specularImageView = createImageView(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	}
 
@@ -111,7 +111,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 
 	{
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(imageInfo.AOFileLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(imageInfo.AOLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -156,7 +156,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 	// Emission texture
 	{
 		int texWidth, texHeight, texChannels;
-		stbi_uc* pixels = stbi_load(imageInfo.EmissionFileLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		stbi_uc* pixels = stbi_load(imageInfo.EmissionLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
@@ -244,9 +244,9 @@ void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
 	createImage(swapChainExtent.width, swapChainExtent.height, swapChainImageFormat,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ssaoLightingImage, ssaoLightingImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, SSAOBlurImage, SSAOBlurImageMemory);
 
-	ssaoLightingImageView = createImageView(ssaoLightingImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+	SSAOBlurImageView = createImageView(SSAOBlurImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** Position image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -256,13 +256,21 @@ void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
 
 	positionImageView = createImageView(positionImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	/** Normal image */
+	/** Normals image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalImage, normalImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gNormalsImage, gNormalsImageMemory);
 
-	normalImageView = createImageView(normalImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	gNormalsImageView = createImageView(gNormalsImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	/** Specular image */
+	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, specImage, specImageMemory);
+
+	specImageView = createImageView(specImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** Albedo image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -522,7 +530,7 @@ void ImageResource::createTextureSampler()
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_NEAREST;
 	samplerInfo.minFilter = VK_FILTER_NEAREST;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.addressModeV = samplerInfo.addressModeU;
 	samplerInfo.addressModeW = samplerInfo.addressModeU;
