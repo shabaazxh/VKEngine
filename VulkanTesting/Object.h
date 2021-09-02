@@ -18,6 +18,7 @@ struct Vertex {
 	glm::vec2 texCoord;
 
 	VkVertexInputBindingDescription getBindingDescription() {
+
 		VkVertexInputBindingDescription bindingDescriptions{};
 		bindingDescriptions.binding = 0;
 		bindingDescriptions.stride = sizeof(Vertex);

@@ -15,88 +15,187 @@ ImageResource::ImageResource(VkPhysicalDevice physicalDevice) {
 	this->physicalDevice = physicalDevice;
 }
 
-void ImageResource::createTextureImage()
+void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 {
 	std::unique_ptr<Buffer> bufferResource = std::make_unique<Buffer>(device, physicalDevice);
 
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(imageInfo.DiffuseLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-	//Diffuse
-	int texWidth, texHeight, texChannels;
-	stbi_uc* pixels = stbi_load(diffuseTEXTURE.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-	VkDeviceSize imageSize = texWidth * texHeight * 4;
+		if (!pixels) {
+			throw std::runtime_error("failed to load texture image!");
+		}
 
-	if (!pixels) {
-		throw std::runtime_error("failed to load texture image!");
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		stbi_image_free(pixels);
+
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.textureImage, imageInfo.textureImageMemory);
+
+		transitionImageLayout(imageInfo.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		copyBufferToImage(stagingBuffer, imageInfo.textureImage,
+			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
+		transitionImageLayout(imageInfo.textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		imageInfo.textureImageView = createImageView(imageInfo.textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	// Specular
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(imageInfo.specularLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-	bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-		stagingBuffer, stagingBufferMemory);
+		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-	void* data;
-	vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	vkUnmapMemory(device, stagingBufferMemory);
+		if (!pixels) {
+			throw std::runtime_error("failed to load normals texture image!");
+		}
 
-	stbi_image_free(pixels);
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
 
-	createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+		bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(stagingBuffer, textureImage,
-		static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
 
-	transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		stbi_image_free(pixels);
 
-	vkDestroyBuffer(device, stagingBuffer, nullptr);
-	vkFreeMemory(device, stagingBufferMemory, nullptr);
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.specularImage, imageInfo.specularImageMemory);
 
-	//Norm
-	pixels = stbi_load(normTEXTURE.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+		transitionImageLayout(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-	imageSize = texWidth * texHeight * 4;
+		copyBufferToImage(stagingBuffer, imageInfo.specularImage,
+			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
 
-	if (!pixels) {
-		throw std::runtime_error("failed to load Norm texture image!");
+		transitionImageLayout(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		imageInfo.specularImageView = createImageView(imageInfo.specularImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+
 	}
 
-	VkBuffer stagingBufferSpec;
-	VkDeviceMemory stagingBufferMemorySpec;
+	// Default AO texture
 
-	bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBufferSpec, stagingBufferMemorySpec);
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(imageInfo.AOLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
-	vkMapMemory(device, stagingBufferMemorySpec, 0, imageSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
-	vkUnmapMemory(device, stagingBufferMemorySpec);
+		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-	stbi_image_free(pixels);
+		if (!pixels) {
+			throw std::runtime_error("failed to load default AO texture image!");
+		}
 
-	createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalImage, textureImageMemory);
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
 
-	transitionImageLayout(normalImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(stagingBufferSpec, normalImage,
-		static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
 
-	transitionImageLayout(normalImage, VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
 
+		stbi_image_free(pixels);
 
-	vkDestroyBuffer(device, stagingBufferSpec, nullptr);
-	vkFreeMemory(device, stagingBufferMemorySpec, nullptr);
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.AOImage, imageInfo.AOImageMemory);
 
+		transitionImageLayout(imageInfo.AOImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		copyBufferToImage(stagingBuffer, imageInfo.AOImage,
+			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
+		transitionImageLayout(imageInfo.AOImage, VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		imageInfo.AOImageView = createImageView(imageInfo.AOImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	}
+
+	// Emission texture
+	{
+		int texWidth, texHeight, texChannels;
+		stbi_uc* pixels = stbi_load(imageInfo.EmissionLocation.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+		VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+		if (!pixels) {
+			throw std::runtime_error("failed to load default AO texture image!");
+		}
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		bufferResource->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		stbi_image_free(pixels);
+
+		createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, imageInfo.EmissionImage, imageInfo.EmissionImageMemory);
+
+		transitionImageLayout(imageInfo.EmissionImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		copyBufferToImage(stagingBuffer, imageInfo.EmissionImage,
+			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
+		transitionImageLayout(imageInfo.EmissionImage, VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		imageInfo.EmissionImageView = createImageView(imageInfo.EmissionImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	}
 }
 
 void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
@@ -145,9 +244,9 @@ void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
 	createImage(swapChainExtent.width, swapChainExtent.height, swapChainImageFormat,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ssaoLightingImage, ssaoLightingImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, SSAOBlurImage, SSAOBlurImageMemory);
 
-	ssaoLightingImageView = createImageView(ssaoLightingImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+	SSAOBlurImageView = createImageView(SSAOBlurImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** Position image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -157,13 +256,21 @@ void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
 
 	positionImageView = createImageView(positionImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	/** Normal image */
+	/** Normals image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, normalImage, normalImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gNormalsImage, gNormalsImageMemory);
 
-	normalImageView = createImageView(normalImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	gNormalsImageView = createImageView(gNormalsImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	/** Specular image */
+	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, specImage, specImageMemory);
+
+	specImageView = createImageView(specImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** Albedo image */
 	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -423,7 +530,7 @@ void ImageResource::createTextureSampler()
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_NEAREST;
 	samplerInfo.minFilter = VK_FILTER_NEAREST;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.addressModeV = samplerInfo.addressModeU;
 	samplerInfo.addressModeW = samplerInfo.addressModeU;
@@ -459,7 +566,7 @@ void ImageResource::createSceneSampler() {
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 1.0f;
 	samplerInfo.anisotropyEnable = VK_FALSE;
-	//samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 	samplerInfo.compareEnable = VK_FALSE;
 	samplerInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;

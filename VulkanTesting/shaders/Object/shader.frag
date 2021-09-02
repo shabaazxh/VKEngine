@@ -10,8 +10,11 @@ layout(binding = 1) uniform Light {
 
 
 layout(binding = 2) uniform sampler2D texSampler;
-layout(binding = 3) uniform sampler2D normSampler;
+layout(binding = 3) uniform sampler2D DiffuseTexture;
 layout(binding = 4) uniform sampler2D shadowMap;
+layout(binding = 9) uniform sampler2D NormalTexture;
+layout(binding = 10) uniform sampler2D AOTexture;
+layout(binding = 11) uniform sampler2D EmissionTexture;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec4 FragPos;
@@ -53,6 +56,8 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 void main() {
 
+    float gamma = 2.2;
+
     vec3 color = vec3(1.0, 1.0, 1.0);
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(1.0);
@@ -65,8 +70,6 @@ void main() {
     vec3 diffuse = diff * LightUBO.lightColor.xyz;
 
     // specular
-    //float specularStrength = 0.5;
-
     vec3 viewDir = normalize(LightUBO.viewPos.xyz - FragPos.xyz);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
@@ -74,8 +77,20 @@ void main() {
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
     vec3 specular = spec * LightUBO.lightColor.xyz;
 
+    //attenuation
+    float max_distance = 1.5;
+    float distance = length(LightUBO.position.xyz - FragPos.xyz);
+    float attenuation = 1.0 / distance * distance;
+
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    vec3 emission = texture(EmissionTexture, fragTexCoord).rgb;
+
     float shadow = ShadowCalculation(FragPosLightSpace);
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+
+    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 
     outColor = vec4(lighting, 1.0);
 }

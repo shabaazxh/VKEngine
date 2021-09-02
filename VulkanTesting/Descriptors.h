@@ -15,7 +15,7 @@ public:
 		VkDescriptorSetLayout descriptorSetLayout,
 		VkDescriptorSetLayout sceneDescriptorSetLayout,
 		VkDescriptorSetLayout SSAOLayout,
-		VkDescriptorSetLayout SSAOLightingLayout,
+		VkDescriptorSetLayout SSAOBlurLayout,
 		VkImageView SSAOImageView,
 		VkImageView AlbedoImageView,
 		VkImageView ssaoSamplingImageView,
@@ -31,8 +31,14 @@ public:
 		VkSampler sceneSampler,
 		VkImageView sceneImageView,
 		VkSampler RepeatSampler,
+		VkImageView DiffuseTextureImageView,
+		VkImageView specTextureImageView,
 		std::vector<VkBuffer> FloorUniformBuffer,
-		std::vector<VkBuffer> FloorLightBuffer);
+		std::vector<VkBuffer> FloorLightBuffer,
+		VkImageView FloorDiffuseTexture,
+		VkImageView FloorSpecTexture,
+		VkImageView AOTextureView,
+		VkImageView EmissionTextureView);
 
 	void createDescriptorPool();
 	void createDescriptorSets();
@@ -41,13 +47,14 @@ public:
 	std::vector<VkDescriptorSet> getDescriptorSets() { return descriptorSets; }
 	std::vector<VkDescriptorSet> GetSceneDescriptorSets() { return sceneDescriptorSets; }
 	std::vector<VkDescriptorSet> GetSSAODescriptorSets() { return SSAODescritporSets; }
-	std::vector<VkDescriptorSet> GetSSAOLightingDescriptorSets() { return SSAOLightingDescritporSets; }
+	std::vector<VkDescriptorSet> GetSSAOBlurDescriptorSets() { return SSAOBlurDescritporSets; }
+	std::vector<VkDescriptorSet> GetFloorDescriptorSet() { return FloorDescriptorSet; }
 
 private:
 	VkDevice device;
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSetLayout sceneDescriptorSetLayout;
-	VkDescriptorSetLayout SSAOLightingLayout;
+	VkDescriptorSetLayout SSAOBlurLayout;
 
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkBuffer> LightBuffers;
@@ -62,14 +69,19 @@ private:
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> sceneDescriptorSets;
 	std::vector<VkDescriptorSet> SSAODescritporSets;
-	std::vector<VkDescriptorSet> SSAOLightingDescritporSets;
+	std::vector<VkDescriptorSet> SSAOBlurDescritporSets;
+	std::vector<VkDescriptorSet> FloorDescriptorSet;
+
 
 	VkImageView textureImageView;
 	VkImageView normImageView;
 	VkImageView shadowImageView;
 	VkImageView AlbedoImageView;
 	VkImageView ssaoSamplingImageView;
-
+	VkImageView FloorDiffuseTexture;
+	VkImageView FloorSpecTexture;
+	VkImageView AOTextureView;
+	VkImageView EmissionTextureView;
 	VkSampler textureSampler;
 
 	// Scene info
@@ -86,6 +98,8 @@ private:
 	VkImageView SSAOLightImageView;
 	VkImageView GeoImageView;
 
+	VkImageView DiffuseTextureImageView;
+	VkImageView specTextureImageView;
 
 	VkSampler RepeatSampler;
 

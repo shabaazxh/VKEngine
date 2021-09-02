@@ -7,6 +7,31 @@
 #include <memory>
 #include <stb_image.h>
 
+namespace ImageTools {
+	struct imageInfo {
+		std::string DiffuseLocation;
+		std::vector<std::string> FileLocations = { DiffuseLocation };
+		VkImage textureImage;
+		VkImageView textureImageView;
+		VkDeviceMemory textureImageMemory;
+
+		std::string specularLocation;
+		VkImage specularImage;
+		VkImageView specularImageView;
+		VkDeviceMemory specularImageMemory;
+
+		std::string AOLocation;
+		VkImage AOImage;
+		VkImageView AOImageView;
+		VkDeviceMemory AOImageMemory;
+
+		std::string EmissionLocation;
+		VkImage EmissionImage;
+		VkImageView EmissionImageView;
+		VkDeviceMemory EmissionImageMemory;
+	};
+}
+
 class ImageResource {
 public:
 	ImageResource(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkPhysicalDevice physicalDevice,
@@ -14,7 +39,7 @@ public:
 	ImageResource(VkPhysicalDevice physicalDevice);
 	ImageResource() = default;
 
-	void createTextureImage();
+	void createTextureImage(ImageTools::imageInfo& imageInfo);
 
 	void createImage(uint32_t width, uint32_t height, VkFormat format,
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
@@ -88,10 +113,15 @@ public:
 	VkImageView GetPositionImageView() { return positionImageView; }
 	VkDeviceMemory GetPositionImageMemory() { return positionImageMemory; }
 
-	// normal Image
-	VkImage GetNormalImage() { return normalImage; }
-	VkImageView GetNormalImageView() { return normalImageView; }
-	VkDeviceMemory GetNormalImageMemory() { return normalImageMemory; }
+	// g buffer normals 
+	VkImage GetgNormalsImage() { return gNormalsImage; }
+	VkImageView GetgNormalsImageView() { return gNormalsImageView; }
+	VkDeviceMemory GetgNormalsImageMemory() { return gNormalsImageMemory; }
+
+	// specular Image
+	VkImage GetSpecImage() { return specImage; }
+	VkImageView GetSpecImageView() { return specImageView; }
+	VkDeviceMemory GetSpecImageeMemory() { return specImageMemory; }
 
 	// noise Image
 	VkImage GetNoiseImage() { return noiseImage; }
@@ -109,9 +139,9 @@ public:
 	VkDeviceMemory GetSSAOSamplingImageMemory() { return ssaoSamplingImageMemory; }
 
 	// SSAO Lighting Image
-	VkImage GetSSAOLightingImage() { return ssaoLightingImage; }
-	VkImageView GetSSAOLightingImageView() { return ssaoLightingImageView; }
-	VkDeviceMemory GetSSAOLightingImageMemory() { return ssaoLightingImageMemory; }
+	VkImage GetSSAOBlurImage() { return SSAOBlurImage; }
+	VkImageView GetSSAOBlurImageView() { return SSAOBlurImageView; }
+	VkDeviceMemory GetSSAOBlurImageMemory() { return SSAOBlurImageMemory; }
 
 	// Geometry image 
 	VkImage GetGeometryImage() { return GeometryImage; }
@@ -138,7 +168,7 @@ private:
 
 	//Texture resources
 	VkImage textureImage;
-	//VkImage normalImage;
+	VkImage normalImage;
 
 	VkImageView textureImageView;
 	VkImageView normImageView;
@@ -168,9 +198,9 @@ private:
 	VkDeviceMemory positionImageMemory;
 
 	// normal image
-	VkImage normalImage;
-	VkImageView normalImageView;
-	VkDeviceMemory normalImageMemory;
+	VkImage specImage;
+	VkImageView specImageView;
+	VkDeviceMemory specImageMemory;
 
 	// noise image
 	VkImage noiseImage;
@@ -189,13 +219,17 @@ private:
 	VkImageView ssaoSamplingImageView;
 	VkDeviceMemory ssaoSamplingImageMemory;
 
-	VkImage ssaoLightingImage;
-	VkImageView ssaoLightingImageView;
-	VkDeviceMemory ssaoLightingImageMemory;
+	VkImage SSAOBlurImage;
+	VkImageView SSAOBlurImageView;
+	VkDeviceMemory SSAOBlurImageMemory;
 
 	VkImage GeometryImage;
 	VkImageView GeometryImageView;
 	VkDeviceMemory GeometryImageMemory;
+
+	VkImage gNormalsImage;
+	VkImageView gNormalsImageView;
+	VkDeviceMemory gNormalsImageMemory;
 
 	std::string diffuseTEXTURE;
 	std::string normTEXTURE;

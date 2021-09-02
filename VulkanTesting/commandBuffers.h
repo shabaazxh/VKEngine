@@ -47,11 +47,14 @@ public:
 		VkRenderPass SSAOQuadRenderPass,
 		VkFramebuffer SSAOQuadFramebuffer,
 		std::vector<VkDescriptorSet> SSAODescriptorSets,
-		VkPipeline SSAOLightingPipeline,
-		VkPipelineLayout SSAOLightingPipelineLayout,
-		std::vector<VkDescriptorSet> SSAOLightingDescriptorSet,
-		VkFramebuffer SSAOLightingFramebuffer,
-		VkRenderPass SSAOLightingRenderPass);
+		VkPipeline SSAOBlurPipeline,
+		VkPipelineLayout SSAOBlurPipelineLayout,
+		std::vector<VkDescriptorSet> SSAOBlurDescriptorSet,
+		VkFramebuffer SSAOBlurFramebuffer,
+		VkRenderPass SSAOBlurRenderPass,
+		VkPipeline FloorPipeline,
+		VkPipelineLayout FloorPipelineLayout,
+		std::vector<VkDescriptorSet> FloorDescriptorSet);
 
 	void createCommandBuffers();
 
@@ -116,10 +119,15 @@ private:
 	VkFramebuffer SSAOQuadFramebuffer;
 	std::vector<VkDescriptorSet> SSAODescriptorSets;
 
-	VkPipeline SSAOLightingPipeline;
-	VkPipelineLayout SSAOLightingPipelineLayout;
-	std::vector<VkDescriptorSet> SSAOLightingDescriptorSet;
-	VkFramebuffer SSAOLightingFramebuffer;
-	VkRenderPass SSAOLightingRenderPass;
+	VkPipeline SSAOBlurPipeline;
+	VkPipelineLayout SSAOBlurPipelineLayout;
+	std::vector<VkDescriptorSet> SSAOBlurDescriptorSet;
+	VkFramebuffer SSAOBlurFramebuffer;
+	VkRenderPass SSAOBlurRenderPass;
+
+	VkPipeline FloorPipeline;
+	VkPipelineLayout FloorPipelineLayout;
+
+	std::vector<VkDescriptorSet> FloorDescriptorSet;
 
 };

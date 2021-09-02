@@ -15,14 +15,14 @@ public:
 	void createQuadRenderPass();
 	void createGeometryPassRenderPass(VkFormat format);
 	void createSSAORenderPass();
-	void createSSAOLightingRenderPass();
+	void createSSAOBlurRenderPass();
 
 	VkRenderPass GetSceneRenderPass() { return SceneRenderPass; }
 	VkRenderPass GetShadowRenderPass() { return shadowPass; }
 	VkRenderPass GetQuadRenderPass() { return QuadRenderPass; }
 	VkRenderPass GetGeometryPassRenderPass() { return GeometryPassRenderPass; }
 	VkRenderPass GetSSAORenderPass() { return SSAORenderPass; }
-	VkRenderPass GetSSAOLightingRenderPass() { return SSAOLightingRenderPass; }
+	VkRenderPass GetSSAOBlurRenderPass() { return SSAOBlurRenderPass; }
 
 
 	
@@ -33,7 +33,7 @@ private:
 	VkRenderPass QuadRenderPass;
 	VkRenderPass GeometryPassRenderPass;
 	VkRenderPass SSAORenderPass;
-	VkRenderPass SSAOLightingRenderPass;
+	VkRenderPass SSAOBlurRenderPass;
 
 	VkFormat swapChainImageFormat;
 	VkDevice device;
