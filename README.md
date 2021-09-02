@@ -1,6 +1,17 @@
 # Vulkan Engine [Development]
 
-Welcome to the Development branch for the Vulkan Engine. 
+This is my first engine with Vulkan. This engine was built while learning Vulkan from the beginning and will continue to see further improvements and changes
+with new features as I continue to learn more about computer graphics programming and the Vulkan API.
 
-The development branch will contain all the latest improvements to the engine, including new features and stability fixes.
-For a more smoother experience, the master build remains the most stable version of the engine.
+Since this is my first attempt at building an engine using Vulkan, there might be some obvious issues. These issues are most likely fixed 
+and will be availble to view in the **Development** branch.
+
+**Install**
+* [VulkanSDK](https://vulkan.lunarg.com/sdk/home)
+
+**Externals**:
+* [GLFW](https://www.glfw.org/)
+* [GLM](https://github.com/g-truc/glm)
+* [STB](https://github.com/nothings/stb)
+
+![Running Instance of current engine](pictures/RunninEngineGam.PNG)
