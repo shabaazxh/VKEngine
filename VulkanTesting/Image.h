@@ -148,7 +148,7 @@ public:
 	VkImageView GetGeometryImageView() { return GeometryImageView; }
 	VkDeviceMemory GetGeometryImageMemory() { return GeometryImageMemory; }
 
-	void createDepthResources(VkExtent2D swapChainExtent);
+	void createImageResources(VkExtent2D swapChainExtent);
 
 	// SCENE Sampler
 	void createSceneSampler();

@@ -12,7 +12,7 @@ layout(binding = 1) uniform Light {
 layout(binding = 2) uniform sampler2D texSampler;
 layout(binding = 3) uniform sampler2D DiffuseTexture;
 layout(binding = 4) uniform sampler2D shadowMap;
-layout(binding = 9) uniform sampler2D NormalTexture;
+layout(binding = 9) uniform sampler2D specularTexture;
 layout(binding = 10) uniform sampler2D AOTexture;
 layout(binding = 11) uniform sampler2D EmissionTexture;
 
@@ -29,7 +29,9 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
+
     float closestDepth = texture(shadowMap, projCoords.xy).r;
+
     float currentDepth = projCoords.z;
 
     vec3 normal = normalize(Normal);
@@ -51,6 +53,24 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     if(projCoords.z > 1.0)
         shadow = 0.0;
         
+    return shadow;
+}
+
+// fragposLightSpace -> transformed verticies to light space 
+float shadowResult(vec4 fragPosLightSpace)
+{
+    // convert light-space position into the range [-1, 1]
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+    // convert the coordinates from [-1, 1] to [0,1] in order to correctly sample from depth map
+    projCoords = projCoords * 0.5 + 0.5;
+
+    float closesDepth = texture(shadowMap, vec2(1.0 - projCoords.x, 1.0 - projCoords.y)).r;
+
+    float currentDepth = projCoords.z;
+
+    float shadow = currentDepth > closesDepth ? 1.0 : 0.0;
+
     return shadow;
 }
 
@@ -87,7 +107,7 @@ void main() {
 
     vec3 emission = texture(EmissionTexture, fragTexCoord).rgb;
 
-    float shadow = ShadowCalculation(FragPosLightSpace);
+    float shadow = shadowResult(FragPosLightSpace);
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));

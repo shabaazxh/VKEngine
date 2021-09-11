@@ -26,7 +26,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
-			throw std::runtime_error("failed to load texture image!");
+			throw std::runtime_error("failed to load Diffuse texture image!");
 		}
 
 		VkBuffer stagingBuffer;
@@ -70,7 +70,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
-			throw std::runtime_error("failed to load normals texture image!");
+			throw std::runtime_error("failed to load Specular texture image!");
 		}
 
 		VkBuffer stagingBuffer;
@@ -161,7 +161,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 
 		if (!pixels) {
-			throw std::runtime_error("failed to load default AO texture image!");
+			throw std::runtime_error("failed to load Emission texture image!");
 		}
 
 		VkBuffer stagingBuffer;
@@ -198,7 +198,7 @@ void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 	}
 }
 
-void ImageResource::createDepthResources(VkExtent2D swapChainExtent) {
+void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 
 	VkFormat format = findDepthFormat();
 
@@ -530,7 +530,7 @@ void ImageResource::createTextureSampler()
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	samplerInfo.magFilter = VK_FILTER_NEAREST;
 	samplerInfo.minFilter = VK_FILTER_NEAREST;
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 	samplerInfo.addressModeV = samplerInfo.addressModeU;
 	samplerInfo.addressModeW = samplerInfo.addressModeU;

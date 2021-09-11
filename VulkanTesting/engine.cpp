@@ -122,7 +122,6 @@ private:
 	std::unique_ptr<Buffer> SSAOQuadBuffer;
 	std::unique_ptr<Buffer> QuadBuffer;
 
-	std::unique_ptr<Object> objectData;
 	std::unique_ptr<Object> SecondModel;
 	std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
 	std::unique_ptr<Descriptors> descriptors;
@@ -136,7 +135,7 @@ private:
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		window = glfwCreateWindow(1920, 1080, "title", nullptr, nullptr);
+		window = glfwCreateWindow(2560, 1440, "title", nullptr, nullptr);
 
 		GameInput->setCameraSettings(window, glm::vec3(0.5f, .1f, 11.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -199,7 +198,7 @@ private:
 		commandPool->createCommandPool(indices.graphicsFamily.value());
 
 		ImageRes = std::make_unique<ImageResource>(logicalDevice, commandPool->getCommandPool(), graphicsQueue, physicalDevice, swapChainImageFormat);
-		ImageRes->createDepthResources(swapChainExtent);
+		ImageRes->createImageResources(swapChainExtent);
 
 		/** ------------------------ FRAME BUFFERS ------------------------- */
 		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->GetSceneRenderPass(), swapChainExtent);
@@ -238,15 +237,15 @@ private:
 
 		std::array<glm::vec3, 3> CameraMovement = { GameInput->getCameraPos(), GameInput->getCameraFront(), GameInput->getcameraUp() };
 		
-		objectData = std::make_unique<Object>();
+		Object objectData;
 		SecondModel = std::make_unique <Object>();
 		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
 	
-		objectData->loadModel("C:/Users/Shahb/Desktop/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
+		objectData.loadModel("C:/Users/Shahb/Desktop/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
 		SecondModel->loadModel("C:/Users/Shahb/Desktop/floor.obj");
 
-		buffers->createVertexBuffer(sizeof(objectData->getVertexData()[0]) * objectData->getVertexData().size(), objectData->getVertexData());
-		buffers->createIndexBuffer(sizeof(objectData->getIndexData()[0]) * objectData->getIndexData().size(), objectData->getIndexData());
+		buffers->createVertexBuffer(sizeof(objectData.getVertexData()[0]) * objectData.getVertexData().size(), objectData.getVertexData());
+		buffers->createIndexBuffer(sizeof(objectData.getIndexData()[0]) * objectData.getIndexData().size(), objectData.getIndexData());
 		buffers->createUniformBuffer();
 
 		FloorObjectBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
@@ -254,12 +253,12 @@ private:
 		FloorObjectBuffer->createUniformBuffer();
 
 		QuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
-		QuadBuffer->createVertexBuffer(sizeof(objectData->GetQuadVertex()[0]) * objectData->GetQuadVertex().size(), objectData->GetQuadVertex());
-		QuadBuffer->createIndexBuffer(sizeof(objectData->GetQuadIncies()[0]) * objectData->GetQuadIncies().size(), objectData->GetQuadIncies());
+		QuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
+		QuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
 
 		SSAOQuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
-		SSAOQuadBuffer->createVertexBuffer(sizeof(objectData->GetQuadVertex()[0]) * objectData->GetQuadVertex().size(), objectData->GetQuadVertex());
-		SSAOQuadBuffer->createIndexBuffer(sizeof(objectData->GetQuadIncies()[0]) * objectData->GetQuadIncies().size(), objectData->GetQuadIncies());
+		SSAOQuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
+		SSAOQuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
 		SSAOQuadBuffer->createUniformBuffer();
 
 		descriptors = std::make_unique<Descriptors>(
@@ -312,7 +311,7 @@ private:
 			buffers->getIndexBuffer(),
 			pipeline->getPipelineLayout(),
 			descriptors->getDescriptorSets(),
-			objectData->getVertexData(),
+			objectData.getVertexData(),
 			shadowPipeline->getGraphicsPipeline(),
 			frameBuffers->getShadowFramebuffer(),
 			renderPass->GetShadowRenderPass(),
@@ -320,7 +319,7 @@ private:
 			shadowPipeline->getGraphicsPipeline(),
 			SecondModel->getVertexData(),
 			FloorObjectBuffer->getVertexBuffer(),
-			objectData->GetQuadIncies(),
+			objectData.GetQuadIncies(),
 			QuadBuffer->getVertexBuffer(),
 			QuadBuffer->getIndexBuffer(),
 			QuadPipeline->getGraphicsPipeline(),
@@ -517,7 +516,7 @@ private:
 		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
 		shadowPipeline->createGraphicsPipelineSingleShader("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.vert.spv");
 		//depth resources
-		ImageRes->createDepthResources(swapChainExtent);
+		ImageRes->createImageResources(swapChainExtent);
 		frameBuffers->createSwapChainFramebuffers(renderPass->GetQuadRenderPass(),ImageRes->getDepthImageView());
 		frameBuffers->createShadowFramebuffer(renderPass->GetShadowRenderPass(), ImageRes->getshadowImageView());
 

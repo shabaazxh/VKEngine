@@ -81,10 +81,10 @@ void Pipeline::createGraphicsPipeline(std::string vertFile, std::string fragFile
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.minSampleShading = 1.0f; // Optional
-	multisampling.pSampleMask = nullptr; // Optional
-	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-	multisampling.alphaToOneEnable = VK_FALSE; // Optional
+	multisampling.minSampleShading = 1.0f; 
+	multisampling.pSampleMask = nullptr; 
+	multisampling.alphaToCoverageEnable = VK_FALSE; 
+	multisampling.alphaToOneEnable = VK_FALSE; 
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -123,10 +123,10 @@ void Pipeline::createGraphicsPipeline(std::string vertFile, std::string fragFile
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1; 
+	pipelineLayoutInfo.pSetLayouts = nullptr; 
+	pipelineLayoutInfo.pushConstantRangeCount = 0; 
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; 
 	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -142,14 +142,14 @@ void Pipeline::createGraphicsPipeline(std::string vertFile, std::string fragFile
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
+	pipelineInfo.pDepthStencilState = &depthStencil; 
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = nullptr; 
 	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	pipelineInfo.basePipelineIndex = -1; // Optional
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; 
+	pipelineInfo.basePipelineIndex = -1; 
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
@@ -232,10 +232,10 @@ void Pipeline::createGraphicsPipelineOverlay(std::string vertFile, std::string f
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.minSampleShading = 1.0f; // Optional
-	multisampling.pSampleMask = nullptr; // Optional
-	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-	multisampling.alphaToOneEnable = VK_FALSE; // Optional
+	multisampling.minSampleShading = 1.0f; 
+	multisampling.pSampleMask = nullptr; 
+	multisampling.alphaToCoverageEnable = VK_FALSE; 
+	multisampling.alphaToOneEnable = VK_FALSE; 
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -249,23 +249,23 @@ void Pipeline::createGraphicsPipelineOverlay(std::string vertFile, std::string f
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_FALSE;
-	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; 
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; 
 
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+	colorBlending.logicOp = VK_LOGIC_OP_COPY; 
 	colorBlending.attachmentCount = 1;
 	colorBlending.pAttachments = &colorBlendAttachment;
-	colorBlending.blendConstants[0] = 0.0f; // Optional
-	colorBlending.blendConstants[1] = 0.0f; // Optional
-	colorBlending.blendConstants[2] = 0.0f; // Optional
-	colorBlending.blendConstants[3] = 0.0f; // Optional
+	colorBlending.blendConstants[0] = 0.0f; 
+	colorBlending.blendConstants[1] = 0.0f; 
+	colorBlending.blendConstants[2] = 0.0f; 
+	colorBlending.blendConstants[3] = 0.0f; 
 
 	VkDynamicState dynamicStates[] = {
 	VK_DYNAMIC_STATE_VIEWPORT,
@@ -279,10 +279,10 @@ void Pipeline::createGraphicsPipelineOverlay(std::string vertFile, std::string f
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1; 
+	pipelineLayoutInfo.pSetLayouts = nullptr; 
+	pipelineLayoutInfo.pushConstantRangeCount = 0; 
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; 
 	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -298,14 +298,14 @@ void Pipeline::createGraphicsPipelineOverlay(std::string vertFile, std::string f
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
+	pipelineInfo.pDepthStencilState = &depthStencil; 
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = nullptr; 
 	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	pipelineInfo.basePipelineIndex = -1; // Optional
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; 
+	pipelineInfo.basePipelineIndex = -1; 
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
@@ -316,6 +316,7 @@ void Pipeline::createGraphicsPipelineOverlay(std::string vertFile, std::string f
 }
 
 void Pipeline::createGraphicsPipelineSingleShader(std::string vertFile) {
+
 	Shader shaderHelper(device);
 	auto vertShaderCode = shaderHelper.readFile(vertFile);
 
@@ -381,10 +382,10 @@ void Pipeline::createGraphicsPipelineSingleShader(std::string vertFile) {
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.minSampleShading = 1.0f; // Optional
-	multisampling.pSampleMask = nullptr; // Optional
-	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-	multisampling.alphaToOneEnable = VK_FALSE; // Optional
+	multisampling.minSampleShading = 1.0f; 
+	multisampling.pSampleMask = nullptr; 
+	multisampling.alphaToCoverageEnable = VK_FALSE; 
+	multisampling.alphaToOneEnable = VK_FALSE; 
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -408,13 +409,13 @@ void Pipeline::createGraphicsPipelineSingleShader(std::string vertFile) {
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+	colorBlending.logicOp = VK_LOGIC_OP_COPY; 
 	colorBlending.attachmentCount = 1;
 	colorBlending.pAttachments = &colorBlendAttachment;
-	colorBlending.blendConstants[0] = 0.0f; // Optional
-	colorBlending.blendConstants[1] = 0.0f; // Optional
-	colorBlending.blendConstants[2] = 0.0f; // Optional
-	colorBlending.blendConstants[3] = 0.0f; // Optional
+	colorBlending.blendConstants[0] = 0.0f; 
+	colorBlending.blendConstants[1] = 0.0f; 
+	colorBlending.blendConstants[2] = 0.0f; 
+	colorBlending.blendConstants[3] = 0.0f; 
 
 	VkDynamicState dynamicStates[] = {
 	VK_DYNAMIC_STATE_VIEWPORT,
@@ -429,7 +430,7 @@ void Pipeline::createGraphicsPipelineSingleShader(std::string vertFile) {
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1; 
 	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -447,12 +448,12 @@ void Pipeline::createGraphicsPipelineSingleShader(std::string vertFile) {
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pDepthStencilState = &depthStencil; 
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = nullptr; 
 	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	pipelineInfo.basePipelineIndex = -1; // Optional
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; 
+	pipelineInfo.basePipelineIndex = -1; 
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
@@ -477,10 +478,10 @@ void Pipeline::createComputePipeline(std::string computeFile) {
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 0; 
+	pipelineLayoutInfo.pSetLayouts = nullptr; 
+	pipelineLayoutInfo.pushConstantRangeCount = 0; 
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; 
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout!");
@@ -570,10 +571,10 @@ void Pipeline::createGeometryPassGraphicsPipeline(std::string vertFile, std::str
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.minSampleShading = 1.0f; // Optional
-	multisampling.pSampleMask = nullptr; // Optional
-	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
-	multisampling.alphaToOneEnable = VK_FALSE; // Optional
+	multisampling.minSampleShading = 1.0f; 
+	multisampling.pSampleMask = nullptr; 
+	multisampling.alphaToCoverageEnable = VK_FALSE; 
+	multisampling.alphaToOneEnable = VK_FALSE; 
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -588,50 +589,50 @@ void Pipeline::createGeometryPassGraphicsPipeline(std::string vertFile, std::str
 
 	colorBlendAttachment[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment[0].blendEnable = VK_TRUE;
-	colorBlendAttachment[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[0].alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	colorBlendAttachment[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[0].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[0].colorBlendOp = VK_BLEND_OP_ADD; 
+	colorBlendAttachment[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[0].alphaBlendOp = VK_BLEND_OP_ADD; 
 
 	colorBlendAttachment[1].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment[1].blendEnable = VK_TRUE;
-	colorBlendAttachment[1].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[1].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[1].colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlendAttachment[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[1].alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	colorBlendAttachment[1].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[1].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[1].colorBlendOp = VK_BLEND_OP_ADD; 
+	colorBlendAttachment[1].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[1].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[1].alphaBlendOp = VK_BLEND_OP_ADD; 
 
 	colorBlendAttachment[2].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment[2].blendEnable = VK_TRUE;
-	colorBlendAttachment[2].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[2].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[2].colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	colorBlendAttachment[2].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	colorBlendAttachment[2].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	colorBlendAttachment[2].alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	colorBlendAttachment[2].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[2].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[2].colorBlendOp = VK_BLEND_OP_ADD; 
+	colorBlendAttachment[2].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+	colorBlendAttachment[2].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	colorBlendAttachment[2].alphaBlendOp = VK_BLEND_OP_ADD; 
 
 	//colorBlendAttachment[3].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	//colorBlendAttachment[3].blendEnable = VK_TRUE;
-	//colorBlendAttachment[3].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	//colorBlendAttachment[3].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	//colorBlendAttachment[3].colorBlendOp = VK_BLEND_OP_ADD; // Optional
-	//colorBlendAttachment[3].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-	//colorBlendAttachment[3].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-	//colorBlendAttachment[3].alphaBlendOp = VK_BLEND_OP_ADD; // Optional
+	//colorBlendAttachment[3].srcColorBlendFactor = VK_BLEND_FACTOR_ONE; 
+	//colorBlendAttachment[3].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	//colorBlendAttachment[3].colorBlendOp = VK_BLEND_OP_ADD; 
+	//colorBlendAttachment[3].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; 
+	//colorBlendAttachment[3].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; 
+	//colorBlendAttachment[3].alphaBlendOp = VK_BLEND_OP_ADD; 
 
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	colorBlending.logicOpEnable = VK_FALSE;
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+	colorBlending.logicOp = VK_LOGIC_OP_COPY; 
 	colorBlending.attachmentCount = 3;
 	colorBlending.pAttachments = colorBlendAttachment.data();
-	colorBlending.blendConstants[0] = 0.0f; // Optional
-	colorBlending.blendConstants[1] = 0.0f; // Optional
-	colorBlending.blendConstants[2] = 0.0f; // Optional
-	colorBlending.blendConstants[3] = 0.0f; // Optional
+	colorBlending.blendConstants[0] = 0.0f; 
+	colorBlending.blendConstants[1] = 0.0f; 
+	colorBlending.blendConstants[2] = 0.0f; 
+	colorBlending.blendConstants[3] = 0.0f; 
 
 	VkDynamicState dynamicStates[] = {
 	VK_DYNAMIC_STATE_VIEWPORT,
@@ -645,10 +646,10 @@ void Pipeline::createGeometryPassGraphicsPipeline(std::string vertFile, std::str
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1; 
+	pipelineLayoutInfo.pSetLayouts = nullptr; 
+	pipelineLayoutInfo.pushConstantRangeCount = 0; 
+	pipelineLayoutInfo.pPushConstantRanges = nullptr; 
 	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -664,14 +665,14 @@ void Pipeline::createGeometryPassGraphicsPipeline(std::string vertFile, std::str
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = &depthStencil; // Optional
+	pipelineInfo.pDepthStencilState = &depthStencil; 
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = nullptr; 
 	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
-	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
-	pipelineInfo.basePipelineIndex = -1; // Optional
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; 
+	pipelineInfo.basePipelineIndex = -1; 
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
