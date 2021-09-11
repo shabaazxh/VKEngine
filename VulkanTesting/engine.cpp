@@ -32,6 +32,7 @@
 #include "Input.h"
 #include "Image.h"
 
+
 const std::vector<const char*> validationLayers = {
 	 "VK_LAYER_KHRONOS_validation"
 };
@@ -122,7 +123,6 @@ private:
 	std::unique_ptr<Buffer> SSAOQuadBuffer;
 	std::unique_ptr<Buffer> QuadBuffer;
 
-	std::unique_ptr<Object> objectData;
 	std::unique_ptr<Object> SecondModel;
 	std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
 	std::unique_ptr<Descriptors> descriptors;
@@ -132,14 +132,15 @@ private:
 
 
 	void initWindow() {
+		std::system("shaders/compile.bat");
+
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		window = glfwCreateWindow(1920, 1080, "title", nullptr, nullptr);
+		window = glfwCreateWindow(2560, 1440, "title", nullptr, nullptr);
 
 		GameInput->setCameraSettings(window, glm::vec3(0.5f, .1f, 11.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
 	}
 
 	void initVulkan() {
@@ -174,32 +175,32 @@ private:
 		descriptorSetLayout->createSSAOBlurDescriptorSetLayout();
 
 		GeometryPassPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetGeometryPassRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		GeometryPassPipeline->createGeometryPassGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/GeometryPass/ssao_geometry.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/GeometryPass/ssao_geometry.frag.spv");
+		GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
 		SSAOQuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAORenderPass(), swapChainExtent, descriptorSetLayout->GetSSAODescriptorSetLayout());
-		SSAOQuadPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag.spv");
+		SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAOQuad.frag.spv");
 
 		SSAOBlurPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAOBlurRenderPass(), swapChainExtent, descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
-		SSAOBlurPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOBlur.vert.spv","C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOBlur.frag.spv");
+		SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv","shaders/ssao/SSAOBlur.frag.spv");
 
 		QuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetQuadRenderPass(), swapChainExtent, descriptorSetLayout->GetQuadDescriptorSetLayout());
-		QuadPipeline->createGraphicsPipelineOverlay("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/quad.vert.spv","C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/quad.frag.spv");
+		QuadPipeline->createGraphicsPipelineOverlay("shaders/quad.vert.spv","shaders/quad.frag.spv");
 
 		shadowPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetShadowRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		shadowPipeline->createGraphicsPipelineSingleShader("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow/shadow.vert.spv");
+		shadowPipeline->createGraphicsPipelineSingleShader("shaders/shadow/shadow.vert.spv");
 
 		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/frag.spv");
+		pipeline->createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
 
 		FloorPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
-		FloorPipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/textureShader.vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/Object/textureShader.frag.spv");
+		FloorPipeline->createGraphicsPipeline("shaders/Object/textureShader.vert.spv", "shaders/Object/textureShader.frag.spv");
 
 		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
 		commandPool->createCommandPool(indices.graphicsFamily.value());
 
 		ImageRes = std::make_unique<ImageResource>(logicalDevice, commandPool->getCommandPool(), graphicsQueue, physicalDevice, swapChainImageFormat);
-		ImageRes->createDepthResources(swapChainExtent);
+		ImageRes->createImageResources(swapChainExtent);
 
 		/** ------------------------ FRAME BUFFERS ------------------------- */
 		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->GetSceneRenderPass(), swapChainExtent);
@@ -218,17 +219,17 @@ private:
 
 
 		ImageTools::imageInfo F1Image{};
-		F1Image.DiffuseLocation = "C:/Users/Shahb/Desktop/white.png";
-		F1Image.specularLocation = "C:/Users/Shahb/Desktop/white.png";
-		F1Image.AOLocation = "C:/Users/Shahb/Desktop/white.png";
-		F1Image.EmissionLocation = "C:/Users/Shahb/Desktop/white.png";
+		F1Image.DiffuseLocation = "Textures/white.png";
+		F1Image.specularLocation = "Textures/white.png";
+		F1Image.AOLocation = "Textures/white.png";
+		F1Image.EmissionLocation = "Textures/white.png";
 		ImageRes->createTextureImage(F1Image);
 
 		ImageTools::imageInfo FloorImageInfo{};
-		FloorImageInfo.DiffuseLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.specularLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.AOLocation = "C:/Users/Shahb/Desktop/white.png";
-		FloorImageInfo.EmissionLocation= "C:/Users/Shahb/Desktop/white.png";
+		FloorImageInfo.DiffuseLocation = "Textures/white.png";
+		FloorImageInfo.specularLocation = "Textures/white.png";
+		FloorImageInfo.AOLocation = "Textures/white.png";
+		FloorImageInfo.EmissionLocation= "Textures/white.png";
 
 		ImageRes->createTextureImage(FloorImageInfo);
 
@@ -238,15 +239,15 @@ private:
 
 		std::array<glm::vec3, 3> CameraMovement = { GameInput->getCameraPos(), GameInput->getCameraFront(), GameInput->getcameraUp() };
 		
-		objectData = std::make_unique<Object>();
+		Object objectData;
 		SecondModel = std::make_unique <Object>();
 		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
 	
-		objectData->loadModel("C:/Users/Shahb/Desktop/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
-		SecondModel->loadModel("C:/Users/Shahb/Desktop/floor.obj");
+		objectData.loadModel("Models/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
+		SecondModel->loadModel("Models/floor.obj");
 
-		buffers->createVertexBuffer(sizeof(objectData->getVertexData()[0]) * objectData->getVertexData().size(), objectData->getVertexData());
-		buffers->createIndexBuffer(sizeof(objectData->getIndexData()[0]) * objectData->getIndexData().size(), objectData->getIndexData());
+		buffers->createVertexBuffer(sizeof(objectData.getVertexData()[0]) * objectData.getVertexData().size(), objectData.getVertexData());
+		buffers->createIndexBuffer(sizeof(objectData.getIndexData()[0]) * objectData.getIndexData().size(), objectData.getIndexData());
 		buffers->createUniformBuffer();
 
 		FloorObjectBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
@@ -254,12 +255,12 @@ private:
 		FloorObjectBuffer->createUniformBuffer();
 
 		QuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
-		QuadBuffer->createVertexBuffer(sizeof(objectData->GetQuadVertex()[0]) * objectData->GetQuadVertex().size(), objectData->GetQuadVertex());
-		QuadBuffer->createIndexBuffer(sizeof(objectData->GetQuadIncies()[0]) * objectData->GetQuadIncies().size(), objectData->GetQuadIncies());
+		QuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
+		QuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
 
 		SSAOQuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
-		SSAOQuadBuffer->createVertexBuffer(sizeof(objectData->GetQuadVertex()[0]) * objectData->GetQuadVertex().size(), objectData->GetQuadVertex());
-		SSAOQuadBuffer->createIndexBuffer(sizeof(objectData->GetQuadIncies()[0]) * objectData->GetQuadIncies().size(), objectData->GetQuadIncies());
+		SSAOQuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
+		SSAOQuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
 		SSAOQuadBuffer->createUniformBuffer();
 
 		descriptors = std::make_unique<Descriptors>(
@@ -312,7 +313,7 @@ private:
 			buffers->getIndexBuffer(),
 			pipeline->getPipelineLayout(),
 			descriptors->getDescriptorSets(),
-			objectData->getVertexData(),
+			objectData.getVertexData(),
 			shadowPipeline->getGraphicsPipeline(),
 			frameBuffers->getShadowFramebuffer(),
 			renderPass->GetShadowRenderPass(),
@@ -320,7 +321,7 @@ private:
 			shadowPipeline->getGraphicsPipeline(),
 			SecondModel->getVertexData(),
 			FloorObjectBuffer->getVertexBuffer(),
-			objectData->GetQuadIncies(),
+			objectData.GetQuadIncies(),
 			QuadBuffer->getVertexBuffer(),
 			QuadBuffer->getIndexBuffer(),
 			QuadPipeline->getGraphicsPipeline(),
@@ -514,10 +515,10 @@ private:
 		VkFormat shadowDepth = ImageResHelper->findDepthFormat();
 		renderPass->createSceneRenderPass(shadowDepth);
 		renderPass->createShadowRenderPass(shadowDepth);
-		pipeline->createGraphicsPipeline("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/vert.spv", "C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/frag.spv");
-		shadowPipeline->createGraphicsPipelineSingleShader("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/shadow.vert.spv");
+		pipeline->createGraphicsPipeline("shaders/vert.spv", "shaders/frag.spv");
+		shadowPipeline->createGraphicsPipelineSingleShader("shaders/shadow.vert.spv");
 		//depth resources
-		ImageRes->createDepthResources(swapChainExtent);
+		ImageRes->createImageResources(swapChainExtent);
 		frameBuffers->createSwapChainFramebuffers(renderPass->GetQuadRenderPass(),ImageRes->getDepthImageView());
 		frameBuffers->createShadowFramebuffer(renderPass->GetShadowRenderPass(), ImageRes->getshadowImageView());
 

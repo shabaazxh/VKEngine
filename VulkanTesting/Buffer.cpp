@@ -195,15 +195,13 @@ void Buffer::updateUniformBuffers(uint32_t currentImage) {
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	float spaceTime = glfwGetTime() / 5;
 
-	float near_plane = 1.0f, far_plane = 20.0f;
-	//std::cout << spaceTime << std::endl;
+	float near_plane = 1.0f, far_plane = 12.f;
 
 	float lightFOV = 45.0f;
 	
-	float direction = -((float) glfwGetTime() * -2.0f) / 10;
+	glm::vec4 lightpos = glm::vec4(-2.0f, 4.0f, 5.0f, 1.0f); //-2.0f, 9.0f, -8.0f, 1.0f :: //-2.0f, 5.0f, 5.0f, 1.0f
 
-	glm::vec4 lightpos = glm::vec4(-7.0f, 9.0f, -8.0f, 1.0f); //-2.0f, 9.0f, -8.0f, 1.0f
-
+	// SSAO samples 
 	KernelSample ks{};
 	std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
 	std::default_random_engine generator;
@@ -221,46 +219,42 @@ void Buffer::updateUniformBuffers(uint32_t currentImage) {
 		ssaoKernel.push_back(sample);
 	}
 
-	// Transfer to the shader
+	// SSAO samples -> Transfer to the shader
 	for (unsigned int i = 0; i < 64; i++) {
 		ks.samples[i] = ssaoKernel[i];
 	}
 
+	// Model, View & Projection
 	UniformBufferObject ubo{};
 	ubo.model = glm::mat4(1.0f);
 	ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.0f, 0.0f));
-	//ubo.model = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime() * glm::radians(45.0f)/5, glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.view = glm::lookAt(cameraMovement[0], cameraMovement[0] * cameraMovement[1], cameraMovement[2]);
-	//ubo.view = glm::lookAt(glm::vec3(-3.0f, -3.0f * -1.94802f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	ubo.proj = glm::perspective(glm::radians(fov), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 1000.0f);
 	ubo.proj[1][1] *= -1;
 
 	ks.projection = ubo.proj;
 
-
+	// Handling Lighting
 	Light lighting{};
 	lighting.position = glm::vec4(lightpos);
-	//lighting.position.x = cos(glm::radians(spaceTime * 50.0f)) * 2.0f;
-	/*lighting.position.y = 3.0f + sin(glm::radians(spaceTime * 360.0f)) * 1.0f;
-	lighting.position.z = 5.0f + sin(glm::radians(spaceTime * 360.0f)) * 5.0f;*/
+	/*lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+	lighting.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+	lighting.position.z = 1.0f + sin(glfwGetTime() / 2.0f) * 5.0f;*/
+	//std::cout << lighting.position.y << std::endl;
 	lighting.lightColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0); //0.5f, 0.5f, 0.5f, 1.0
-
-	//Change lighting colours
-	/*lighting.lightColor.x = sin(glfwGetTime() * 2.0f);
-	lighting.lightColor.y = 0.7f;
-	lighting.lightColor.z = sin(glfwGetTime() * 1.3f);*/
 	lighting.objectColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	lighting.viewPos = glm::vec4(cameraMovement[0], 0.0f);
 	lighting.invertedNormals = false;
 	lighting.Linear = 0.09;
 	lighting.Quadratic = 0.032;
 
-	//glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-	glm::mat4 lightProjection = glm::perspective(glm::radians(45.f), 1.0f, near_plane, far_plane);
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, 10.0f, -10.0f, near_plane, far_plane);
+	//glm::mat4 lightProjection = glm::perspective(glm::radians(45.f), 1.0f, near_plane, far_plane);
 	glm::mat4 lightView = glm::lookAt(glm::vec3(lighting.position), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 depthModelMatrix = glm::mat4(1.0f);
 	lighting.lightSpaceMatrix = lightProjection * lightView * depthModelMatrix;
 
+	// Mapping to GPU
 	void* data;
 	vkMapMemory(device, uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));

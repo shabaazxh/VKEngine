@@ -60,7 +60,7 @@ void main() {
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(1.0);
 
-    vec3 ambient = 0.3 * color;
+    vec3 ambient = 0.3 * texture(DiffuseTexture, fragTexCoord).rgb * color;
     
     //Diffuse
     vec3 lightDir = normalize(LightUBO.position.xyz - FragPos.xyz);

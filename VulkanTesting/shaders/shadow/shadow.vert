@@ -22,6 +22,5 @@ layout(location = 0) in vec3 inPosition;
 
 void main() {
     gl_Position = lightBuffer.lightSpaceMatrix * camera.model * vec4(inPosition, 1.0);
- 
 }
 
