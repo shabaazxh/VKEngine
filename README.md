@@ -11,6 +11,6 @@ and will be availble to view in the **Development** branch.
 **Externals**:
 * [GLFW](https://www.glfw.org/)
 * [GLM](https://github.com/g-truc/glm)
-* [STB](https://github.com/nothings/stb)
+* [Stb](https://github.com/nothings/stb)
 
 ![Running Instance of current engine](pictures/RunninEngineGam.PNG)
