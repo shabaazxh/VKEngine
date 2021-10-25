@@ -32,7 +32,14 @@ public:
 	void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 	void processInput(GLFWwindow* window);
 
+	void updateUniformBuffers(uint32_t currentImage);
+
 private:
+
+	float lerp(float a, float b, float f) {
+		return a + f * (b - a);
+	}
+
 	std::vector<VkSemaphore> imageAvaialbleSemaphore;
 	std::vector<VkSemaphore> renderFinishedSemaphore;
 	std::vector<VkFence> inFlightFences;

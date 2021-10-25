@@ -87,7 +87,7 @@ void main() {
     //Diffuse
     vec3 lightDir = normalize(LightUBO.position.xyz - FragPos.xyz);
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * LightUBO.lightColor.xyz;
+    vec3 diffuse = diff * texture(DiffuseTexture, fragTexCoord).rgb * LightUBO.lightColor.xyz;
 
     // specular
     vec3 viewDir = normalize(LightUBO.viewPos.xyz - FragPos.xyz);
@@ -95,7 +95,7 @@ void main() {
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * LightUBO.lightColor.xyz;
+    vec3 specular = spec * texture(specularTexture, fragTexCoord).rgb * LightUBO.lightColor.xyz;
 
     //attenuation
     float max_distance = 1.5;

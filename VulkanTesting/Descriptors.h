@@ -34,7 +34,6 @@ public:
 		VkImageView DiffuseTextureImageView,
 		VkImageView specTextureImageView,
 		std::vector<VkBuffer> FloorUniformBuffer,
-		std::vector<VkBuffer> FloorLightBuffer,
 		VkImageView FloorDiffuseTexture,
 		VkImageView FloorSpecTexture,
 		VkImageView AOTextureView,

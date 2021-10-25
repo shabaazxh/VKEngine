@@ -19,8 +19,8 @@
 class Buffer {
 
 public:
-	Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::array<glm::vec3, 3> cameraMovement);
-	Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::vector<VkDeviceMemory> uniformBuffersMemory, std::vector<VkDeviceMemory> LightBuffersMemory, std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory,std::array<glm::vec3, 3> cameraMovement);
+	Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent);
+	Buffer(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::vector<VkImage> swapChainImages, VkExtent2D swapChainExtent, std::vector<VkDeviceMemory> uniformBuffersMemory, std::vector<VkDeviceMemory> LightBuffersMemory, std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory);
 	Buffer(VkDevice device, VkPhysicalDevice physicalDevice);
 	Buffer() = default;
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
@@ -39,8 +39,7 @@ public:
 	VkDeviceMemory getIndexBufferMemory() { return indexBufferMemory; }
 
 	//Uniform buffer
-	void createUniformBuffer();
-	void updateUniformBuffers(uint32_t currentImage);
+	void createUniformBuffer(size_t buffer_size);
 	std::vector<VkBuffer> getUniformBuffers() { return uniformBuffers; }
 	std::vector<VkDeviceMemory> getUniformBuffersMemory() { return uniformBuffersMemory; }
 
@@ -56,20 +55,13 @@ public:
 
 	VkExtent2D getSwapChainExtent() { return swapChainExtent; }
 
-	float getFOV() { return fov; }
-
 	VkBuffer getDepthBuffer() { return depthShapeBuffer; }
 	VkDeviceMemory getDepthBufferMemory() { return depthShapeBufferMemory; }
 
 	VkBuffer getDepthIndexBuffer() { return depthIndexBuffer; }
 	VkDeviceMemory getDepthIndexBufferMemory() { return depthIndexMemory; }
 
-
 	glm::vec3 getLightPos() { return lightPos; }
-
-	float lerp(float a, float b, float f) {
-		return a + f * (b - a);
-	}
 
 private:
 	VkCommandPool commandPool;
@@ -108,11 +100,7 @@ private:
 
 	std::vector<VkImage> swapChainImages;
 
-	std::array<glm::vec3, 3> cameraMovement;
-
 	VkQueue graphicsQueue;
-	std::unique_ptr<Object> ObjectInfo = std::make_unique<Object>();
 
 	glm::vec3 lightPos = glm::vec3(2.0f, -10.0f, 3.0f);
-	float fov = 45.0f;
 };

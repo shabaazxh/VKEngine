@@ -20,4 +20,4 @@ C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/V
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag.spv
 
 
-pause
+exit

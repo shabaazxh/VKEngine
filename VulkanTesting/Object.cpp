@@ -11,6 +11,8 @@ void Object::loadModel(std::string modelPath) {
 		throw std::runtime_error(warn + err);
 	}
 
+	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+
 	for (const auto& shape : shapes) {
 		for (const auto& index : shape.mesh.indices) {
 			Vertex vertex{};
@@ -35,8 +37,15 @@ void Object::loadModel(std::string modelPath) {
 			};
 
 			vertex.color = { 1.0f, 1.0f, 1.0f};
+
+			//if (uniqueVertices.count(vertex) == 0) {
+			//	uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+			//	vertices.push_back(vertex);
+
+			//}
+
 			vertices.push_back(vertex);
-			
+
 		}
 
 	}

@@ -24,20 +24,25 @@
     <ClCompile Include="commandPool.cpp" />
     <ClCompile Include="Descriptors.cpp" />
     <ClCompile Include="DescriptorSetLayout.cpp" />
-    <ClCompile Include="engine.cpp" />
     <ClCompile Include="Framebuffers.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
     <ClCompile Include="vendor\stb_image.cpp" />
+    <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="vulkanengine.cpp" />
+    <ClCompile Include="VulkanTools.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="compile.bat" />
+    <None Include="shaders\compile.bat" />
     <None Include="shaders\frag.spv" />
     <None Include="shaders\quad.frag" />
     <None Include="shaders\quad.vert" />
@@ -63,6 +68,11 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="SwapChain.h" />
+    <ClInclude Include="VulkanDevice.h" />
+    <ClInclude Include="vulkanengine.h" />
+    <ClInclude Include="VulkanTools.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

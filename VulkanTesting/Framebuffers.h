@@ -9,6 +9,7 @@ class Framebuffers {
 public:
 	Framebuffers(VkDevice device,std::vector<VkImageView> swapChainImageViews, 
 		VkRenderPass renderPass, VkExtent2D swapChainExtent);
+
 	void createSwapChainFramebuffers(VkRenderPass swapChainPresentRenderPass, VkImageView depthImageView);
 
 	void createDisplaySceneFramebuffer(VkRenderPass SceneRenderPass, VkImageView SceneImageView, VkImageView depthImageView);

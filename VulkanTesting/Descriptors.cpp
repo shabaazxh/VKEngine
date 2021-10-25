@@ -31,7 +31,6 @@ Descriptors::Descriptors(
 	VkImageView DiffuseTextureImageView,
 	VkImageView specTextureImageView,
 	std::vector<VkBuffer> FloorUniformBuffer,
-	std::vector<VkBuffer> FloorLightBuffer,
 	VkImageView FloorDiffuseTexture,
 	VkImageView FloorSpecTexture,
 	VkImageView AOTextureView,
@@ -49,7 +48,6 @@ Descriptors::Descriptors(
 	this->sceneSampler = sceneSampler;
 	this->sceneImageView = sceneImageView;
 	this->FloorUniformBuffer = FloorUniformBuffer;
-	this->FloorLightBuffer = FloorLightBuffer;
 	this->sceneDescriptorSetLayout = sceneDescriptorSetLayout;
 	this->SSAOLayout = SSAOLayout;
 	this->SSAOImageView = SSAOImageView;
@@ -385,7 +383,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkDescriptorImageInfo SSAOImageLightingInfo{};
 		SSAOImageLightingInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; //VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		SSAOImageLightingInfo.imageView = SSAOLightImageView;
+		SSAOImageLightingInfo.imageView = SSAOLightImageView; //this should be SSAOLightImageView to blue the SSAO PASS!
 		SSAOImageLightingInfo.sampler = sceneSampler;
 
 		VkWriteDescriptorSet sceneImageDescriptorWrite{};
