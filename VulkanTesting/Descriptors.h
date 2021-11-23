@@ -37,7 +37,9 @@ public:
 		VkImageView FloorDiffuseTexture,
 		VkImageView FloorSpecTexture,
 		VkImageView AOTextureView,
-		VkImageView EmissionTextureView);
+		VkImageView EmissionTextureView,
+		VkImageView depthImageView,
+		VkImageView positionsImageView);
 
 	void createDescriptorPool();
 	void createDescriptorSets();
@@ -81,6 +83,7 @@ private:
 	VkImageView FloorSpecTexture;
 	VkImageView AOTextureView;
 	VkImageView EmissionTextureView;
+	VkImageView depthImageView;
 	VkSampler textureSampler;
 
 	// Scene info
@@ -101,5 +104,7 @@ private:
 	VkImageView specTextureImageView;
 
 	VkSampler RepeatSampler;
+
+	VkImageView positionsImageView;
 
 };

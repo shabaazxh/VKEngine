@@ -10,6 +10,9 @@
 class RenderPass {
 public:
 	RenderPass(VkDevice device, VkFormat swapChainImageFormat);
+	//void createRenderPass(std::vector<VkImageView> images)
+	void createRenderPass_Positions(VkFormat imageFormat);
+
 	void createSceneRenderPass(VkFormat format);
 	void createShadowRenderPass(VkFormat format);
 	void createQuadRenderPass();
@@ -23,7 +26,7 @@ public:
 	VkRenderPass GetGeometryPassRenderPass() { return GeometryPassRenderPass; }
 	VkRenderPass GetSSAORenderPass() { return SSAORenderPass; }
 	VkRenderPass GetSSAOBlurRenderPass() { return SSAOBlurRenderPass; }
-
+	VkRenderPass GetRenderPass() { return renderPass; }
 
 	
 
@@ -38,6 +41,7 @@ private:
 	VkFormat swapChainImageFormat;
 	VkDevice device;
 
+	VkRenderPass renderPass;
 	std::unique_ptr<ImageResource> imageHelper;
 
 };

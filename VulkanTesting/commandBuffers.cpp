@@ -37,7 +37,16 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	VkRenderPass SSAOBlurRenderPass,
 	VkPipeline FloorPipeline,
 	VkPipelineLayout FloorPipelineLayout,
-	std::vector<VkDescriptorSet> FloorDescriptorSet){
+	std::vector<VkDescriptorSet> FloorDescriptorSet,
+	VkBuffer positionsVertexBuffer,
+	VkBuffer positionsIndexBuffer,
+	VkFramebuffer positionsFB,
+	VkRenderPass positionsRP,
+	VkPipeline positionsPipeline,
+	VkPipelineLayout positionsPL,
+	std::vector<uint32_t> modelIndex,
+	std::vector<uint32_t> FloorModelIndexData,
+	VkBuffer FloorModelIndexBuffer){
 
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
@@ -85,6 +94,15 @@ CommandBuffers::CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapC
 	this->FloorPipeline = FloorPipeline;
 	this->FloorPipelineLayout = FloorPipelineLayout;
 	this->FloorDescriptorSet = FloorDescriptorSet;
+	this->positionsVertexBuffer = positionsVertexBuffer;
+	this->positionsIndexBuffer = positionsIndexBuffer;
+	this->positionsFB = positionsFB;
+	this->positionsRP = positionsRP;
+	this->positionsPipeline = positionsPipeline;
+	this->positionsPL = positionsPL;
+	this->modelIndex = modelIndex;
+	this->FloorModelIndexData = FloorModelIndexData;
+	this->FloorModelIndexBuffer = FloorModelIndexBuffer;
 }
 
 void CommandBuffers::createCommandBuffers() {
@@ -131,10 +149,10 @@ void CommandBuffers::createCommandBuffers() {
 		VkDeviceSize offsets2[] = { 0 };
 
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers2, offsets2);
-		//vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, shadowPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-		//vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
-		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -164,13 +182,17 @@ void CommandBuffers::createCommandBuffers() {
 		
 		// Object model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
-		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
 		
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipeline);
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipelineLayout, 0, 1, &FloorDescriptorSet[i], 0, nullptr);
 		//Floor model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, FloorVertex, offsets3);
-		vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffers[i], FloorModelIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(FloorModelIndexData.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -200,11 +222,46 @@ void CommandBuffers::createCommandBuffers() {
 
 		// Object model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
-		vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
 
 		////Floor model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, FloorVertex, offsets3);
-		vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffers[i], FloorModelIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(FloorModelIndexData.size()), 1, 0, 0, 0);
+		//vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
+
+		/** -----------------------------  Positions QUAD Render -------------------------- */
+
+		VkRenderPassBeginInfo PosQuadRenderPassInfo{};
+		PosQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		PosQuadRenderPassInfo.renderPass = positionsRP;
+		PosQuadRenderPassInfo.framebuffer = positionsFB;
+		PosQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		PosQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+
+		std::array<VkClearValue, 1> positionsCV{};
+		positionsCV[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		//SSAOQuadClearValues[1].depthStencil = { 1.0f, 0 };
+
+		PosQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(positionsCV.size());
+		PosQuadRenderPassInfo.pClearValues = positionsCV.data();
+
+		vkCmdBeginRenderPass(commandBuffers[i], &PosQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		VkBuffer posvert[] = { positionsVertexBuffer };
+		VkDeviceSize offsets4[] = { 0 };
+
+		// SSAO Quad render
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, positionsPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, positionsPL, 0, 1, &SSAODescriptorSets[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, posvert, offsets4);
+		vkCmdBindIndexBuffer(commandBuffers[i], positionsIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -218,8 +275,9 @@ void CommandBuffers::createCommandBuffers() {
 		SSAOQuadRenderPassInfo.renderArea.offset = { 0,0 };
 		SSAOQuadRenderPassInfo.renderArea.extent = swapChainExtent;
 
-		std::array<VkClearValue, 1> SSAOQuadClearValues{};
+		std::array<VkClearValue, 2> SSAOQuadClearValues{};
 		SSAOQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		SSAOQuadClearValues[1].depthStencil = { 1.0f, 0 };
 
 		SSAOQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOQuadClearValues.size());
 		SSAOQuadRenderPassInfo.pClearValues = SSAOQuadClearValues.data();

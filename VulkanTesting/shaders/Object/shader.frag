@@ -112,5 +112,5 @@ void main() {
 
     lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 
-    outColor = vec4(lighting, 1.0);
+    outColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

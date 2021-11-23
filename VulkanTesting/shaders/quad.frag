@@ -15,5 +15,6 @@ void main() {
 
 	color *= ssao;
 
+	//outColor = vec4(vec3(texture(SSAOImage, vec2(1.0 - uvCoords.x, uvCoords.y))), 1.0);
 	outColor = vec4(color, 1.0);
 }

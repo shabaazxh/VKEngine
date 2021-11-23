@@ -30,6 +30,7 @@ void VE::vulkanEngine::mainloop() {
 
 	while (!glfwWindowShouldClose(EngineWindow->getWindow())) {
 		renderer->processInput(EngineWindow->getWindow());
+		//glfwSetCursorPosCallback(EngineWindow->getWindow(), mouse_callback);
 		renderer->drawFrame();
 		glfwPollEvents();
 	}
@@ -48,6 +49,11 @@ void VE::vulkanEngine::Rendering() {
 
 	std::cout << "Initialising Rendering resources" << std::endl;
 
+
+	VkImage DepthpositionImage;
+	VkImageView DepthpositionsImageView;
+	VkDeviceMemory DepthpositionsMemory;
+
 	vkDevice = std::make_unique<VE::VulkanDevice>(instance, surface);
 	vkDevice->createDevice();
 
@@ -57,6 +63,7 @@ void VE::vulkanEngine::Rendering() {
 	ImageResource DepthFormat(vkDevice->getPhysicalDevice());
 	VkFormat shadowDepth = DepthFormat.findDepthFormat();
 
+	/** RENDER PASSES **/
 	renderPass = std::make_unique<RenderPass>(vkDevice->getDevice(), swapChain->getSwapChainImageFormat());
 	renderPass->createSceneRenderPass(shadowDepth);
 	renderPass->createShadowRenderPass(shadowDepth);
@@ -65,18 +72,23 @@ void VE::vulkanEngine::Rendering() {
 	renderPass->createGeometryPassRenderPass(shadowDepth);
 	renderPass->createSSAORenderPass();
 	renderPass->createSSAOBlurRenderPass();
+	renderPass->createRenderPass_Positions(VK_FORMAT_R32G32B32A32_SFLOAT);
 
+	/** DESCRIPTORSET LAYOUT **/
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(vkDevice->getDevice());
 	descriptorSetLayout->createDescriptorSetLayout();
 	descriptorSetLayout->createQuadDescriptorSetLayout();
 	descriptorSetLayout->createSSAODescriptorSetLayout();
 	descriptorSetLayout->createSSAOBlurDescriptorSetLayout();
+	
+	std::unique_ptr<Pipeline> positionsPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
+	positionsPipeline->createGraphicsPipelineOverlay("shaders/quad.vert.spv", "shaders/positionsOutput.frag.spv");
 
 	GeometryPassPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetGeometryPassRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 	GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
 	SSAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
-	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAOQuad.frag.spv");
+	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/aao.frag.spv");
 
 	SSAOBlurPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
 	SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv", "shaders/ssao/SSAOBlur.frag.spv");
@@ -87,9 +99,8 @@ void VE::vulkanEngine::Rendering() {
 	shadowPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetShadowRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 	shadowPipeline->createGraphicsPipelineSingleShader("shaders/shadow/shadow.vert.spv");
 
-	Pipeline pipeline(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
-	//pipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
-	pipeline.createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
+	MainModelPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
+	MainModelPipeline->createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
 
 	FloorPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 	FloorPipeline->createGraphicsPipeline("shaders/Object/textureShader.vert.spv", "shaders/Object/textureShader.frag.spv");
@@ -99,8 +110,19 @@ void VE::vulkanEngine::Rendering() {
 	commandPool->createCommandPool(indices.graphics.value());
 
 	ImageRes = std::make_unique<ImageResource>(vkDevice->getDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), vkDevice->getPhysicalDevice(), swapChain->getSwapChainImageFormat());
-	ImageRes->createImageResources(swapChain->getSwapChainExtent());
 
+	// positions images, for positions from depth buffer
+	ImageRes->createImage(swapChain->getSwapChainExtent().width, swapChain->getSwapChainExtent().height,
+		VK_FORMAT_R32G32B32A32_SFLOAT,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, DepthpositionImage, DepthpositionsMemory);
+
+	DepthpositionsImageView = ImageRes->createImageView(DepthpositionImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	std::vector<VkImageView> positionsfb = { DepthpositionsImageView };
+
+	ImageRes->createImageResources(swapChain->getSwapChainExtent());
 	/** ------------------------ FRAME BUFFERS ------------------------- */
 	frameBuffers = std::make_unique<Framebuffers>(vkDevice->getDevice(), swapChain->getSwapChainImageViews(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent());
 	frameBuffers->createSwapChainFramebuffers(renderPass->GetQuadRenderPass(), ImageRes->getDepthImageView());
@@ -109,6 +131,8 @@ void VE::vulkanEngine::Rendering() {
 	frameBuffers->createGeometryPassFrameBuffer(renderPass->GetGeometryPassRenderPass(), ImageRes->GetGeometryImageView(), ImageRes->GetPositionImageView(), ImageRes->GetgNormalsImageView(), ImageRes->GetAlbedoImageView(), ImageRes->getDepthImageView());
 	frameBuffers->createSSAOQuadFrameBuffer(renderPass->GetSSAORenderPass(), ImageRes->GetSSAOImageView());
 	frameBuffers->createSSAOBlurQuadFrameBuffer(renderPass->GetSSAOBlurRenderPass(), ImageRes->GetSSAOBlurImageView());
+	
+	frameBuffers->createFramebuffer(renderPass->GetRenderPass(), positionsfb);
 
 	ImageTools::imageInfo F1Image{};
 	F1Image.DiffuseLocation = "Textures/white.png";
@@ -130,20 +154,25 @@ void VE::vulkanEngine::Rendering() {
 
 	std::array<glm::vec3, 3> CameraMovement = { CameraMovementInput->getCameraPos(), CameraMovementInput->getCameraFront(), CameraMovementInput->getcameraUp() };
 
-	buffers = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+	Buffer positionsQuad = Buffer(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+	positionsQuad.createVertexBuffer(sizeof(QuadData.Model.GetQuadVertex()[0])* QuadData.Model.GetQuadVertex().size(), QuadData.Model.GetQuadVertex());
+	positionsQuad.createIndexBuffer(sizeof(QuadData.Model.GetQuadIncies()[0])* QuadData.Model.GetQuadIncies().size(), QuadData.Model.GetQuadIncies());
 
-	F1Car.Model.loadModel("Models/SponzaScene.obj"); //f1_onthefloor f1carwithcubes
-	Floor.Model.loadModel("Models/floor.obj");
+	MainModelBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+	
+	F1Car.Model.LoadModel("Models/Winter.obj"); //f1_onthefloor f1carwithcubes
+	Floor.Model.LoadModel("Models/floor.obj");
 
 	LightBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	LightBuffer->createUniformBuffer(sizeof(Light));
 	
-	buffers->createVertexBuffer(sizeof(F1Car.Model.getVertexData()[0]) * F1Car.Model.getVertexData().size(), F1Car.Model.getVertexData());
-	buffers->createIndexBuffer(sizeof(F1Car.Model.getIndexData()[0]) * F1Car.Model.getIndexData().size(), F1Car.Model.getIndexData());
-	buffers->createUniformBuffer(sizeof(UniformBufferObject));
+	MainModelBuffer->createVertexBuffer(sizeof(F1Car.Model.getVertexData()[0]) * F1Car.Model.getVertexData().size(), F1Car.Model.getVertexData());
+	MainModelBuffer->createIndexBuffer(sizeof(F1Car.Model.getIndexData()[0]) * F1Car.Model.getIndexData().size(), F1Car.Model.getIndexData());
+	MainModelBuffer->createUniformBuffer(sizeof(UniformBufferObject));
 
 	FloorObjectBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	FloorObjectBuffer->createVertexBuffer(sizeof(Floor.Model.getVertexData()[0]) * Floor.Model.getVertexData().size(), Floor.Model.getVertexData());
+	FloorObjectBuffer->createIndexBuffer(sizeof(Floor.Model.getIndexData()[0])* Floor.Model.getIndexData().size(), Floor.Model.getIndexData());
 	FloorObjectBuffer->createUniformBuffer(sizeof(UniformBufferObject));
 
 	QuadBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
@@ -158,7 +187,7 @@ void VE::vulkanEngine::Rendering() {
 	descriptors = std::make_unique<Descriptors>(
 		vkDevice->getDevice(),
 		swapChain->getSwapChainImages(),
-		buffers->getUniformBuffers(),
+		MainModelBuffer->getUniformBuffers(),
 		LightBuffer->getUniformBuffers(),
 		SSAOQuadBuffer->getUniformBuffers(),
 		descriptorSetLayout->getDescriptorSetLayout(),
@@ -186,7 +215,9 @@ void VE::vulkanEngine::Rendering() {
 		FloorImageInfo.textureImageView,
 		FloorImageInfo.specularImageView,
 		F1Image.AOImageView,
-		F1Image.EmissionImageView);
+		F1Image.EmissionImageView,
+		ImageRes->getDepthImageView(),
+		DepthpositionsImageView);
 
 	descriptors->createDescriptorPool();
 	descriptors->createDescriptorSets();
@@ -197,12 +228,12 @@ void VE::vulkanEngine::Rendering() {
 		commandPool->getCommandPool(),
 		renderPass->GetSceneRenderPass(),
 		swapChain->getSwapChainExtent(),
-		pipeline.getGraphicsPipeline(),
-		pipeline.getComputePipeline(),
+		MainModelPipeline->getGraphicsPipeline(),
+		MainModelPipeline->getComputePipeline(),
 		vkDevice->getPhysicalDevice(),
-		buffers->getVertexBuffer(),
-		buffers->getIndexBuffer(),
-		pipeline.getPipelineLayout(),
+		MainModelBuffer->getVertexBuffer(),
+		MainModelBuffer->getIndexBuffer(),
+		MainModelPipeline->getPipelineLayout(),
 		descriptors->getDescriptorSets(),
 		F1Car.Model.getVertexData(),
 		shadowPipeline->getGraphicsPipeline(),
@@ -238,7 +269,16 @@ void VE::vulkanEngine::Rendering() {
 		renderPass->GetSSAOBlurRenderPass(),
 		FloorPipeline->getGraphicsPipeline(),
 		FloorPipeline->getPipelineLayout(),
-		descriptors->GetFloorDescriptorSet());
+		descriptors->GetFloorDescriptorSet(),
+		positionsQuad.getVertexBuffer(),
+		positionsQuad.getIndexBuffer(),
+		frameBuffers->GetFramebufers(),
+		renderPass->GetRenderPass(),
+		positionsPipeline->getGraphicsPipeline(),
+		positionsPipeline->getPipelineLayout(),
+		F1Car.Model.getIndexData(),
+		Floor.Model.getIndexData(),
+		FloorObjectBuffer->getIndexBuffer());
 
 	commandBuffers->createCommandBuffers();
 
@@ -252,7 +292,7 @@ void VE::vulkanEngine::Rendering() {
 		swapChain->getSwapChainExtent(),
 		vkDevice->getPhysicalDevice(),
 		commandPool->getCommandPool(),
-		buffers->getUniformBuffersMemory(),
+		MainModelBuffer->getUniformBuffersMemory(),
 		LightBuffer->getUniformBuffersMemory(),
 		SSAOQuadBuffer->getUniformBuffersMemory(),
 		CameraMovement);
@@ -261,13 +301,41 @@ void VE::vulkanEngine::Rendering() {
 
 }
 
+void VE::vulkanEngine::cleanupSwapChain() {
+
+	// Destroy Graphics pipelines
+	vkDestroyPipeline(vkDevice->getDevice(), shadowPipeline->getGraphicsPipeline(), nullptr);
+	vkDestroyPipeline(vkDevice->getDevice(), FloorPipeline->getGraphicsPipeline(), nullptr);
+	vkDestroyPipeline(vkDevice->getDevice(), GeometryPassPipeline->getGraphicsPipeline(), nullptr);
+	vkDestroyPipeline(vkDevice->getDevice(), QuadPipeline->getGraphicsPipeline(), nullptr);
+	vkDestroyPipeline(vkDevice->getDevice(), SSAOQuadPipeline->getGraphicsPipeline(), nullptr);
+	vkDestroyPipeline(vkDevice->getDevice(), SSAOBlurPipeline->getGraphicsPipeline(), nullptr);
+
+	// Destroy PipelineLayout
+	vkDestroyPipelineLayout(vkDevice->getDevice(), shadowPipeline->getPipelineLayout(), nullptr);
+	vkDestroyPipelineLayout(vkDevice->getDevice(), FloorPipeline->getPipelineLayout(), nullptr);
+	vkDestroyPipelineLayout(vkDevice->getDevice(), GeometryPassPipeline->getPipelineLayout(), nullptr);
+	vkDestroyPipelineLayout(vkDevice->getDevice(), QuadPipeline->getPipelineLayout(), nullptr);
+	vkDestroyPipelineLayout(vkDevice->getDevice(), SSAOQuadPipeline->getPipelineLayout(), nullptr);
+	vkDestroyPipelineLayout(vkDevice->getDevice(), SSAOBlurPipeline->getPipelineLayout(), nullptr);
+
+	// Destroy render pass
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetShadowRenderPass(), nullptr);
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetRenderPass(), nullptr);
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), nullptr);
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), nullptr);
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), nullptr);
+	vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetGeometryPassRenderPass(), nullptr);
+}
+
+
 void VE::vulkanEngine::cleanup() {
 
 	if (enableValidationLayers) {
 		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 	}
 
-	//cleanupSwapChain();
+	cleanupSwapChain();
 
 	//Texture resources destroy
 	vkDestroySampler(vkDevice->getDevice(), ImageRes->getSampler(), nullptr);
@@ -292,12 +360,12 @@ void VE::vulkanEngine::cleanup() {
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSceneImageMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->getShadowMemory(), nullptr);
 
-	vkDestroyBuffer(vkDevice->getDevice(), buffers->getIndexBuffer(), nullptr);
-	vkFreeMemory(vkDevice->getDevice(), buffers->getIndexBufferMemory(), nullptr);
+	vkDestroyBuffer(vkDevice->getDevice(), MainModelBuffer->getIndexBuffer(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), MainModelBuffer->getIndexBufferMemory(), nullptr);
 
 	// Buffer
-	vkDestroyBuffer(vkDevice->getDevice(), buffers->getVertexBuffer(), nullptr);
-	vkFreeMemory(vkDevice->getDevice(), buffers->getVertexBufferMemory(), nullptr);
+	vkDestroyBuffer(vkDevice->getDevice(), MainModelBuffer->getVertexBuffer(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), MainModelBuffer->getVertexBufferMemory(), nullptr);
 
 	// Quad buffer
 	vkDestroyBuffer(vkDevice->getDevice(), QuadBuffer->getVertexBuffer(), nullptr);
@@ -308,8 +376,11 @@ void VE::vulkanEngine::cleanup() {
 	vkDestroyBuffer(vkDevice->getDevice(), FloorObjectBuffer->getVertexBuffer(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), FloorObjectBuffer->getVertexBufferMemory(), nullptr);
 
+	// Destroy descriptor set layouts
 	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->getDescriptorSetLayout(), nullptr);
 	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->GetQuadDescriptorSetLayout(), nullptr);
+	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->GetSSAODescriptorSetLayout(), nullptr);
+	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout(), nullptr);
 
 	for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
 		vkDestroySemaphore(vkDevice->getDevice(), renderer->getFinishedSemaphore()[i], nullptr);

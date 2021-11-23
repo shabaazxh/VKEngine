@@ -90,6 +90,10 @@ struct Light {
 	struct KernelSample {
 		alignas(16) glm::vec4 samples[64];
 		alignas(16) glm::mat4 projection;
+		alignas(16) glm::vec4 cameraEye;
+		alignas(16) glm::vec4 cameraCenter;
+		alignas(16) float z_far;
+		alignas(16) glm::mat4 mvMatrix;
 	};
 
 class Object {
@@ -101,7 +105,7 @@ public:
 	std::vector<Vertex> GetQuadVertex() { return QuadVertices; }
 	std::vector<uint32_t> GetQuadIncies() { return QuadIndices; }
 
-	void loadModel(std::string modelPath);
+	void LoadModel(std::string modelPath);
 private:
 
 	const std::vector<Vertex> QuadVertices = {

@@ -55,7 +55,16 @@ public:
 		VkRenderPass SSAOBlurRenderPass,
 		VkPipeline FloorPipeline,
 		VkPipelineLayout FloorPipelineLayout,
-		std::vector<VkDescriptorSet> FloorDescriptorSet);
+		std::vector<VkDescriptorSet> FloorDescriptorSet,
+		VkBuffer positionsVertexBuffer,
+		VkBuffer positionsIndexBuffer,
+		VkFramebuffer positionsFB,
+		VkRenderPass positionsRP,
+		VkPipeline positionsPipeline,
+		VkPipelineLayout positionsPL,
+		std::vector<uint32_t> modelIndex,
+		std::vector<uint32_t> FloorModelIndexData,
+		VkBuffer FloorModelIndexBuffer);
 
 	void createCommandBuffers();
 
@@ -91,6 +100,8 @@ private:
 
 	std::vector<Vertex> sceneVertexInformation;
 	std::vector<uint32_t> modelIndex;
+	std::vector<uint32_t> FloorModelIndexData;
+	VkBuffer FloorModelIndexBuffer;
 
 	std::vector<Vertex> FloorVertexData;
 	VkBuffer FloorRenderBuffer;
@@ -130,5 +141,13 @@ private:
 	VkPipelineLayout FloorPipelineLayout;
 
 	std::vector<VkDescriptorSet> FloorDescriptorSet;
+
+
+	VkBuffer positionsVertexBuffer;
+	VkBuffer positionsIndexBuffer;
+	VkFramebuffer positionsFB;
+	VkRenderPass positionsRP;
+	VkPipeline positionsPipeline;
+	VkPipelineLayout positionsPL;
 
 };

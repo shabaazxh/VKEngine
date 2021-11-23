@@ -34,7 +34,9 @@ Descriptors::Descriptors(
 	VkImageView FloorDiffuseTexture,
 	VkImageView FloorSpecTexture,
 	VkImageView AOTextureView,
-	VkImageView EmissionTextureView)
+	VkImageView EmissionTextureView,
+	VkImageView depthImageView,
+	VkImageView positionsImageView)
 {
 	this->device = device;
 	this->swapChainImages = swapChainImages;
@@ -67,6 +69,8 @@ Descriptors::Descriptors(
 	this->FloorSpecTexture = FloorSpecTexture;
 	this->AOTextureView = AOTextureView;
 	this->EmissionTextureView = EmissionTextureView;
+	this->depthImageView = depthImageView;
+	this->positionsImageView = positionsImageView;
 }
 
 void Descriptors::createDescriptorPool() {
@@ -383,7 +387,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkDescriptorImageInfo SSAOImageLightingInfo{};
 		SSAOImageLightingInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; //VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		SSAOImageLightingInfo.imageView = SSAOLightImageView; //this should be SSAOLightImageView to blue the SSAO PASS!
+		SSAOImageLightingInfo.imageView = SSAOImageView; //this should be SSAOLightImageView to blur the SSAO PASS! -> SSAOImageView
 		SSAOImageLightingInfo.sampler = sceneSampler;
 
 		VkWriteDescriptorSet sceneImageDescriptorWrite{};
@@ -437,6 +441,16 @@ void Descriptors::createDescriptorSets() {
 		noiseImageInfo.imageView = noiseImageView;
 		noiseImageInfo.sampler = RepeatSampler;
 
+		VkDescriptorImageInfo depthMapImageInfo{};
+		depthMapImageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		depthMapImageInfo.imageView = depthImageView;
+		depthMapImageInfo.sampler = textureSampler;
+
+		VkDescriptorImageInfo depthToPos{};
+		depthToPos.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		depthToPos.imageView = positionImageView;
+		depthToPos.sampler = textureSampler;
+
 		VkWriteDescriptorSet positionSamplerDescriptorWrite{};
 		positionSamplerDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		positionSamplerDescriptorWrite.dstSet = SSAODescritporSets[i];
@@ -482,10 +496,29 @@ void Descriptors::createDescriptorSets() {
 		cameraDescriptorWrite.descriptorCount = 1;
 		cameraDescriptorWrite.pBufferInfo = &cameraUniform;
 
-		std::array<VkWriteDescriptorSet, 5> writeDescriptorSet = { positionSamplerDescriptorWrite,
-		normalSamplerDescriptorWrite, noiseSamplerDescriptorWrite, KernelDescriptorWrite, cameraDescriptorWrite };
+		VkWriteDescriptorSet depthMapDescriptorWrite{};
+		depthMapDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		depthMapDescriptorWrite.dstSet = SSAODescritporSets[i];
+		depthMapDescriptorWrite.dstBinding = 6;
+		depthMapDescriptorWrite.dstArrayElement = 0;
+		depthMapDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		depthMapDescriptorWrite.descriptorCount = 1;
+		depthMapDescriptorWrite.pImageInfo = &depthMapImageInfo;
 
-		vkUpdateDescriptorSets(device, 5, writeDescriptorSet.data(), 0, nullptr);
+		VkWriteDescriptorSet depthToPosDescriptorWrite{};
+		depthToPosDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		depthToPosDescriptorWrite.dstSet = SSAODescritporSets[i];
+		depthToPosDescriptorWrite.dstBinding = 7;
+		depthToPosDescriptorWrite.dstArrayElement = 0;
+		depthToPosDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		depthToPosDescriptorWrite.descriptorCount = 1;
+		depthToPosDescriptorWrite.pImageInfo = &depthToPos;
+
+		std::array<VkWriteDescriptorSet, 7> writeDescriptorSet = { positionSamplerDescriptorWrite,
+		normalSamplerDescriptorWrite, noiseSamplerDescriptorWrite, KernelDescriptorWrite, cameraDescriptorWrite,
+		depthMapDescriptorWrite, depthToPosDescriptorWrite };
+
+		vkUpdateDescriptorSets(device, 7, writeDescriptorSet.data(), 0, nullptr);
 	}
 
 	/** SSAO Lighting Descriptor */

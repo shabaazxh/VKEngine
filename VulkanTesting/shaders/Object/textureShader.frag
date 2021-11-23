@@ -89,7 +89,7 @@ void main() {
 
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
-   // lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
+    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 
-    outColor = vec4(lighting, 1.0);
+    outColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

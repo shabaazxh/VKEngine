@@ -204,7 +204,8 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 
 	/** Depth image */
 	createImage(swapChainExtent.width, swapChainExtent.height, format,
-		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | 
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
 
 	depthImageView = createImageView(depthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -233,12 +234,12 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 	GeometryImageView = createImageView(GeometryImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** SSAO Image */
-	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16_SFLOAT,
+	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, //VK_FORMAT_R16G16B16A16_SFLOAT
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, SSAOImage, SSAOImageMemory);
 
-	SSAOImageView = createImageView(SSAOImage, VK_FORMAT_R16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	SSAOImageView = createImageView(SSAOImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** SSAO Lighting image */
 	createImage(swapChainExtent.width, swapChainExtent.height, swapChainImageFormat,
@@ -539,9 +540,9 @@ void ImageResource::createTextureSampler()
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 1.0f;
 	samplerInfo.anisotropyEnable = VK_FALSE;
-	//samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	
+
 	if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}

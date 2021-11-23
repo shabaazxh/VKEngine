@@ -101,11 +101,6 @@ void Renderer::createSyncObjects() {
 	}
 }
 
-void Renderer::scroll_callback(GLFWwindow* window, double xOffset, double yOffset) {
-	if (yOffset > 0) {
-		cameraFov++;
-	}
-}
 void Renderer::processInput(GLFWwindow* window) {
 
 
@@ -147,7 +142,7 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 	float spaceTime = glfwGetTime() / 5;
 
-	float near_plane = 1.0f, far_plane = 12.f;
+	float near_plane = 1.0f, far_plane = 30.f;
 
 	float lightFOV = 45.0f;
 
@@ -185,10 +180,16 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.0f, 0.0f));
 	// camera movement : cameraMovement[0], cameraMovement[0] * cameraMovement[1], cameraMovement[2]
 	ubo.view = glm::lookAt(cameraMovement[0], cameraMovement[0] * cameraMovement[1], cameraMovement[2]);
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
+	ubo.proj = glm::perspective(glm::radians(40.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
 	ubo.proj[1][1] *= -1;
 
-	ks.projection = ubo.proj;
+	//glm::vec3(0.5f, .1f, 11.0f),
+	//glm::vec3(0.0f, 0.0f, -1.0f)
+	ks.mvMatrix = glm::mat4(ubo.model * ubo.view);
+	//ks.projection = inverse(ubo.proj);
+	ks.cameraEye = glm::vec4(cameraMovement[0], 1.0f);
+	ks.cameraCenter = glm::vec4(cameraMovement[1], 1.0);
+	ks.z_far = 1000;
 
 	// Handling Lighting
 	Light lighting{};
@@ -203,6 +204,7 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	lighting.invertedNormals = false;
 	lighting.Linear = 0.09;
 	lighting.Quadratic = 0.032;
+
 
 	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, 10.0f, -10.0f, near_plane, far_plane);
 	//glm::mat4 lightProjection = glm::perspective(glm::radians(45.f), 1.0f, near_plane, far_plane);

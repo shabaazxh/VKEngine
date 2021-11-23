@@ -167,22 +167,36 @@ void DescriptorSetLayout::createSSAODescriptorSetLayout() {
 	kernelSampleLayout.binding = 4;
 	kernelSampleLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	kernelSampleLayout.descriptorCount = 1;
-	kernelSampleLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	kernelSampleLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
 	kernelSampleLayout.pImmutableSamplers = nullptr;
 
 	VkDescriptorSetLayoutBinding cameraLayout{};
 	cameraLayout.binding = 5;
 	cameraLayout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	cameraLayout.descriptorCount = 1;
-	cameraLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	cameraLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
 	cameraLayout.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 5> binings = { positionSampler, normalSampler, noiseSampler, kernelSampleLayout,
-	cameraLayout};
+	VkDescriptorSetLayoutBinding depthImageLayout{};
+	depthImageLayout.binding = 6;
+	depthImageLayout.descriptorCount = 1;
+	depthImageLayout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	depthImageLayout.pImmutableSamplers = nullptr;
+	depthImageLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkDescriptorSetLayoutBinding depthToPosImageLayout{};
+	depthToPosImageLayout.binding = 7;
+	depthToPosImageLayout.descriptorCount = 1;
+	depthToPosImageLayout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	depthToPosImageLayout.pImmutableSamplers = nullptr;
+	depthToPosImageLayout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+
+	std::array<VkDescriptorSetLayoutBinding, 7> binings = { positionSampler, normalSampler, noiseSampler, kernelSampleLayout,
+	cameraLayout, depthImageLayout, depthToPosImageLayout };
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 5;
+	layoutInfo.bindingCount = 7;
 	layoutInfo.pBindings = binings.data();
 
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &SSAOLayout) != VK_SUCCESS) {

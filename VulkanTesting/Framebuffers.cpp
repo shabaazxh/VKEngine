@@ -150,3 +150,19 @@ void Framebuffers::createSSAOBlurQuadFrameBuffer(VkRenderPass SSAOLightRenderPas
 		throw std::runtime_error("failed to create shadow framebuffer!");
 	}
 }
+
+void Framebuffers::createFramebuffer(VkRenderPass renderPass, std::vector<VkImageView> images) {
+
+	VkFramebufferCreateInfo frameBufferInfo{};
+	frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	frameBufferInfo.renderPass = renderPass;
+	frameBufferInfo.attachmentCount = static_cast<uint32_t>(images.size());
+	frameBufferInfo.pAttachments = images.data();
+	frameBufferInfo.width = swapChainExtent.width;
+	frameBufferInfo.height = swapChainExtent.height;
+	frameBufferInfo.layers = 1;
+
+	if (vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create positions framebuffer!");
+	}
+}

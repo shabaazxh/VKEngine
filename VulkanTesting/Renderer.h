@@ -29,10 +29,10 @@ public:
 
 	int getMaxFrames() { return MAX_FRAMES_IN_FLIGHT; }
 
-	void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 	void processInput(GLFWwindow* window);
 
 	void updateUniformBuffers(uint32_t currentImage);
+
 
 private:
 
@@ -67,6 +67,5 @@ private:
 	//To use right pair of semaphores, need to keep track of current frame
 	size_t currentFrame = 0;
 
-	float cameraFov;
 
 };
