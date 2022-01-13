@@ -3,8 +3,6 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-
-
 namespace VE {
 
 	class Window {
@@ -15,6 +13,8 @@ namespace VE {
 				: width{ width }, height{ height }, title{ title } {}
 
 			void initWindow();
+
+			static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 			GLFWwindow*		getWindow()  const { return window; }
 			uint32_t	    getWidth()   const { return width; }

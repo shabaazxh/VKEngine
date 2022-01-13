@@ -9,6 +9,7 @@ Descriptors::Descriptors(
 	std::vector<VkBuffer> uniformBuffers,
 	std::vector<VkBuffer> LightBuffers, 
 	std::vector<VkBuffer> kernelBuffers,
+	std::vector<VkBuffer> Light_2_Buffers,
 	VkDescriptorSetLayout descriptorSetLayout,
 	VkDescriptorSetLayout sceneDescriptorSetLayout,
 	VkDescriptorSetLayout SSAOLayout,
@@ -36,7 +37,8 @@ Descriptors::Descriptors(
 	VkImageView AOTextureView,
 	VkImageView EmissionTextureView,
 	VkImageView depthImageView,
-	VkImageView positionsImageView)
+	VkImageView positionsImageView,
+	VkImageView HDRImageView)
 {
 	this->device = device;
 	this->swapChainImages = swapChainImages;
@@ -71,6 +73,8 @@ Descriptors::Descriptors(
 	this->EmissionTextureView = EmissionTextureView;
 	this->depthImageView = depthImageView;
 	this->positionsImageView = positionsImageView;
+	this->HDRImageView = HDRImageView;
+	this->Light_2_Buffers = Light_2_Buffers;
 }
 
 void Descriptors::createDescriptorPool() {
@@ -89,6 +93,34 @@ void Descriptors::createDescriptorPool() {
 
 	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor pool!");
+	}
+}
+
+void Descriptors::ImGuiCreateDescriptorPool() {
+
+		VkDescriptorPoolSize pool_sizes[] = {
+			{VK_DESCRIPTOR_TYPE_SAMPLER,                1000},
+			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000},
+			{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000},
+			{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000},
+			{VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000},
+			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000},
+			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000},
+			{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000},
+			{VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000}
+		};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	if (vkCreateDescriptorPool(device, &pool_info, nullptr, &m_ImGuiDescriptorPool) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create ImGui Descriptor pool");
 	}
 }
 
@@ -166,6 +198,12 @@ void Descriptors::createDescriptorSets() {
 		LightBufferInfo.offset = 0;
 		LightBufferInfo.range = sizeof(Light);
 
+		// Second light
+		VkDescriptorBufferInfo Light_2_BufferInfo{};
+		Light_2_BufferInfo.buffer = Light_2_Buffers[i];
+		Light_2_BufferInfo.offset = 0;
+		Light_2_BufferInfo.range = sizeof(Light);
+
 		VkDescriptorImageInfo depthMapImageInfo{};
 		depthMapImageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 		depthMapImageInfo.imageView = shadowImageView;
@@ -192,6 +230,11 @@ void Descriptors::createDescriptorSets() {
 		EmissionTextureInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		EmissionTextureInfo.imageView = EmissionTextureView;
 		EmissionTextureInfo.sampler = RepeatSampler;
+
+		VkDescriptorImageInfo HDRImageInfo{};
+		HDRImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		HDRImageInfo.imageView = HDRImageView;
+		HDRImageInfo.sampler = textureSampler;
 
 		VkWriteDescriptorSet descriptorWrite{};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -257,11 +300,30 @@ void Descriptors::createDescriptorSets() {
 		depthMapDescriptorWrite.descriptorCount = 1;
 		depthMapDescriptorWrite.pImageInfo = &depthMapImageInfo;
 
-		std::array<VkWriteDescriptorSet, 7> writeDescriptorSet = { descriptorWrite, LightDescriptorWrite, 
-			DiffuseTextureDescriptorWrite, NormalsTextureDescriptorWrite, 
-			AOTextureDescriptorWrite, EmissionTexutreImageWrite, depthMapDescriptorWrite };
+		VkWriteDescriptorSet HDRImageDescriptorWrite{};
+		HDRImageDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		HDRImageDescriptorWrite.dstSet = descriptorSets[i];
+		HDRImageDescriptorWrite.dstBinding = 12;
+		HDRImageDescriptorWrite.dstArrayElement = 0;
+		HDRImageDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		HDRImageDescriptorWrite.descriptorCount = 1;
+		HDRImageDescriptorWrite.pImageInfo = &HDRImageInfo;
 
-		vkUpdateDescriptorSets(device, 7, writeDescriptorSet.data(), 0, nullptr);
+		VkWriteDescriptorSet Light_2_DescriptorWrite{};
+		Light_2_DescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		Light_2_DescriptorWrite.dstSet = descriptorSets[i];
+		Light_2_DescriptorWrite.dstBinding = 13;
+		Light_2_DescriptorWrite.dstArrayElement = 0;
+		Light_2_DescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		Light_2_DescriptorWrite.descriptorCount = 1;
+		Light_2_DescriptorWrite.pBufferInfo = &Light_2_BufferInfo;
+
+		std::array<VkWriteDescriptorSet, 9> writeDescriptorSet = { descriptorWrite, LightDescriptorWrite, 
+			DiffuseTextureDescriptorWrite, NormalsTextureDescriptorWrite, 
+			AOTextureDescriptorWrite, EmissionTexutreImageWrite, depthMapDescriptorWrite, HDRImageDescriptorWrite,
+		Light_2_DescriptorWrite};
+
+		vkUpdateDescriptorSets(device, 9, writeDescriptorSet.data(), 0, nullptr);
 	}
 
 	// Floor descriptors 
@@ -387,7 +449,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkDescriptorImageInfo SSAOImageLightingInfo{};
 		SSAOImageLightingInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; //VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-		SSAOImageLightingInfo.imageView = SSAOImageView; //this should be SSAOLightImageView to blur the SSAO PASS! -> SSAOImageView
+		SSAOImageLightingInfo.imageView = SSAOLightImageView; //this should be SSAOLightImageView to blur the SSAO PASS! -> SSAOImageView
 		SSAOImageLightingInfo.sampler = sceneSampler;
 
 		VkWriteDescriptorSet sceneImageDescriptorWrite{};

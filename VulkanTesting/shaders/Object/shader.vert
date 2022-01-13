@@ -34,7 +34,7 @@ void main() {
     Normal = transpose(inverse(mat3(ubo.model))) * aNormal;
     fragTexCoord = inTexCoord;
     FragPosLightSpace = lightUniform.lightSpaceMatrix * vec4(FragPos.xyz, 1.0);
-    gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+    gl_Position = ubo.proj * ubo.view * vec4(FragPos.xyz, 1.0);
 
     deltaTime = ubo.time;
     fragColor = inColor;

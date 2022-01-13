@@ -19,6 +19,7 @@ public:
 	void createGeometryPassRenderPass(VkFormat format);
 	void createSSAORenderPass();
 	void createSSAOBlurRenderPass();
+	void createImGuiRenderPass(VkFormat format);
 
 	VkRenderPass GetSceneRenderPass() { return SceneRenderPass; }
 	VkRenderPass GetShadowRenderPass() { return shadowPass; }
@@ -27,7 +28,7 @@ public:
 	VkRenderPass GetSSAORenderPass() { return SSAORenderPass; }
 	VkRenderPass GetSSAOBlurRenderPass() { return SSAOBlurRenderPass; }
 	VkRenderPass GetRenderPass() { return renderPass; }
-
+	VkRenderPass GetImGuiRenderPass() const { return ImGuiRenderPass; }
 	
 
 private:
@@ -37,6 +38,7 @@ private:
 	VkRenderPass GeometryPassRenderPass;
 	VkRenderPass SSAORenderPass;
 	VkRenderPass SSAOBlurRenderPass;
+	VkRenderPass ImGuiRenderPass;
 
 	VkFormat swapChainImageFormat;
 	VkDevice device;

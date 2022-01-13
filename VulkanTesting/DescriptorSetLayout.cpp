@@ -11,7 +11,7 @@ void DescriptorSetLayout::createDescriptorSetLayout() {
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	uboLayoutBinding.pImmutableSamplers = nullptr;
 
 	//Lighting
@@ -98,13 +98,27 @@ void DescriptorSetLayout::createDescriptorSetLayout() {
 	EmissionTextureLayoutBinding.pImmutableSamplers = nullptr;
 	EmissionTextureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 12> binings = { uboLayoutBinding, LightLayoutBinding, samplerLayoutBinding, 
+	VkDescriptorSetLayoutBinding HDRMapLayoutBinding{};
+	HDRMapLayoutBinding.binding = 12;
+	HDRMapLayoutBinding.descriptorCount = 1;
+	HDRMapLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	HDRMapLayoutBinding.pImmutableSamplers = nullptr;
+	HDRMapLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding Light_2_LayoutBinding{};
+	Light_2_LayoutBinding.binding = 13;
+	Light_2_LayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	Light_2_LayoutBinding.descriptorCount = 1;
+	Light_2_LayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	Light_2_LayoutBinding.pImmutableSamplers = nullptr;
+
+	std::array<VkDescriptorSetLayoutBinding, 14> binings = { uboLayoutBinding, LightLayoutBinding, samplerLayoutBinding, 
 		depthMapLayout, positionSampler, normalSampler, albedoSampler, ssaoSampler, texutreLayoutBinding,
-	NormalsTextureLayoutBinding, aoSampler, EmissionTextureLayoutBinding };
+	NormalsTextureLayoutBinding, aoSampler, EmissionTextureLayoutBinding, HDRMapLayoutBinding, Light_2_LayoutBinding };
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 12;
+	layoutInfo.bindingCount = 14;
 	layoutInfo.pBindings = binings.data();
 
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {

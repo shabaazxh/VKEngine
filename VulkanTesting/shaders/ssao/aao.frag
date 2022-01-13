@@ -31,12 +31,27 @@ layout(location = 0) out vec4 outColor;
 
 vec4 ambient_occlusion;
 
-const vec2 window = vec2(2560.0, 1440.0);
+const vec2 window = vec2(1920.0, 1080.0);
 const vec2 noiseScale = vec2(1920.0/4.0, 1080.0/4.0);
+
+float near = 0.1;
+float zfar = 1000;
+
 
 float tc_depth(in vec2 tc)
 {
 	return texture(depthMap, vec2(1.0 - uvCoords.x, uvCoords.y)).x;
+}
+
+float LinearizeDepth(in vec2 tc) {
+	float buffer_z = texture(depthMap, tc).x;
+	return (2.0 * near) / (zfar + near - buffer_z * (near - zfar));
+}
+
+float ndcDepth(in vec2 tc) {
+	float depth = texture(depthMap, tc).x;
+
+	return camera.proj[3][2] / (camera.proj[2][2] + depth);
 }
 
 float ec_depth(in vec2 tc)
@@ -50,24 +65,24 @@ void main()
 	vec2 tc_depths = gl_FragCoord.xy / window;
 	
 	// Normals
-	vec3 normals = normalize(texture(gNormal, tc_depths).rgb * 2.0 - 1.0);
+	vec3 normals = normalize(texture(gNormal, tc_depths)).rgb;
 
 	// normals in world coordinates
 	vec3 wc_normal = normalize(transpose(mat3(camera.view)) * normals);
 
-	float ndc_linear_depth = -ec_depth(tc_depths) / 1000;
-
+	float ndc_linear_depth = -ec_depth(tc_depths) / zfar;
+	float lindepth = LinearizeDepth(tc_depths);
 	// camera_center(target) - camera_eye = world coordinate camera ray direction
-	vec3 wc_position_current_frag = kernelsamples.camera_eye.xyz + normalize((kernelsamples.camera_center.xyz - kernelsamples.camera_eye.xyz)) * ndc_linear_depth;
+	vec3 wc_position_current_frag = kernelsamples.camera_eye.xyz + normalize(( kernelsamples.camera_eye.xyz + kernelsamples.camera_center.xyz)) * ndc_linear_depth;
 
 	ambient_occlusion.a = 0.0; 
 
-	const int base_samples = 12;
+	const int base_samples = 0;
 	const int min_samples = 64;
-	const float radius = 10.0;
+	const float radius = 1.0;
 	const float projection_factor = 0.75;
-	const float bias = 0.8;
-	const float sigma = 5.0;
+	const float bias = 1.000;
+	const float sigma = 2.0;
 	const float epsilon = 0.0001;
 
 	int samples = max(int(base_samples / (1.0 + base_samples * ndc_linear_depth)), min_samples);

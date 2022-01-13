@@ -24,6 +24,4 @@ void main() {
 	viewSpace.xyz /= viewSpace.w;
 
 	outColor = vec4(vec3(viewSpace), 1.0);
-
-
 }

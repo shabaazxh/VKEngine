@@ -1,35 +1,13 @@
 #version 450
 
-// Shader by Vladamir Kajain - ShaderX7 
+// Shader by Vladamir Kajalin - ShaderX7 
 
 layout(binding = 3) uniform sampler2D texNoise;
 layout(binding = 6) uniform sampler2D depthMap;
 
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 uvCoords;
+layout(location = 0) out vec4 outColor;
 
-
-layout(binding = 5) uniform UniformBufferObject {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
-    float time;
-}camera;
-
-
-layout(binding = 4) uniform KernelSample {
-	vec3 samples[64];
-	mat4 projection;
-	vec4 camera_eye;
-	vec4 camera_direction;
-	float z_far;
-}kernelsamples;
-
-int kernelSize = 64;
-
-layout(location = 0) out float outColor;
-
-const vec2 window = vec2(2560.0, 1440.0);
+const vec2 window = vec2(1920.0, 1080.0);
 
 float ComputeSSAO(sampler2D sRotSampler4x4, sampler2D sSceneDepthSampler, vec2 screenTC, vec2 screenSize, float farClipDist) 
 {
@@ -54,7 +32,6 @@ float ComputeSSAO(sampler2D sRotSampler4x4, sampler2D sSceneDepthSampler, vec2 s
 	const float offsetScaleStep = 1 + 2.4/nSamplesNum;
 
 	float Accessibility = 0;
-
 
 	for(int i = 0; i < (nSamplesNum/8); i++)
 	for(int x = -1; x <=1; x+=2)
@@ -83,5 +60,6 @@ float ComputeSSAO(sampler2D sRotSampler4x4, sampler2D sSceneDepthSampler, vec2 s
 void main ()
 {
 	vec2 screenTC = gl_FragCoord.xy / window;
-	outColor = ComputeSSAO(texNoise, depthMap, screenTC, window, 1000);
+	float ssao = ComputeSSAO(texNoise, depthMap, screenTC, window, 1000);
+	outColor = vec4(ssao,ssao,ssao,1.0);
 }

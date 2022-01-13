@@ -7,11 +7,12 @@
 
 class Descriptors {
 public:
-	Descriptors(VkDevice device, 
-		std::vector<VkImage> swapChainImages, 
-		std::vector<VkBuffer> uniformBuffers, 
+	Descriptors(VkDevice device,
+		std::vector<VkImage> swapChainImages,
+		std::vector<VkBuffer> uniformBuffers,
 		std::vector<VkBuffer> LightBuffers,
 		std::vector<VkBuffer> kernelBuffers,
+		std::vector<VkBuffer> Light_2_Buffers,
 		VkDescriptorSetLayout descriptorSetLayout,
 		VkDescriptorSetLayout sceneDescriptorSetLayout,
 		VkDescriptorSetLayout SSAOLayout,
@@ -39,12 +40,16 @@ public:
 		VkImageView AOTextureView,
 		VkImageView EmissionTextureView,
 		VkImageView depthImageView,
-		VkImageView positionsImageView);
+		VkImageView positionsImageView,
+		VkImageView HDRImageView);
 
 	void createDescriptorPool();
+	void ImGuiCreateDescriptorPool();
 	void createDescriptorSets();
 
 	VkDescriptorPool getDescriptorPool() { return descriptorPool; }
+	VkDescriptorPool GetImGuiDescriptorPool() { return m_ImGuiDescriptorPool; }
+
 	std::vector<VkDescriptorSet> getDescriptorSets() { return descriptorSets; }
 	std::vector<VkDescriptorSet> GetSceneDescriptorSets() { return sceneDescriptorSets; }
 	std::vector<VkDescriptorSet> GetSSAODescriptorSets() { return SSAODescritporSets; }
@@ -60,12 +65,14 @@ private:
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkBuffer> LightBuffers;
 	std::vector<VkBuffer> kernelBuffers;
+	std::vector<VkBuffer> Light_2_Buffers;
 
 	std::vector<VkBuffer> FloorUniformBuffer;
 	std::vector<VkBuffer> FloorLightBuffer;
 
 	std::vector<VkImage> swapChainImages;
 	VkDescriptorPool descriptorPool;
+	VkDescriptorPool m_ImGuiDescriptorPool;
 
 	std::vector<VkDescriptorSet> descriptorSets;
 	std::vector<VkDescriptorSet> sceneDescriptorSets;
@@ -106,5 +113,7 @@ private:
 	VkSampler RepeatSampler;
 
 	VkImageView positionsImageView;
+
+	VkImageView HDRImageView;
 
 };

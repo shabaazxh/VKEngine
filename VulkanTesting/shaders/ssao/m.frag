@@ -23,7 +23,7 @@ layout(binding = 4) uniform KernelSample {
 	vec3 samples[64];
 	mat4 projection;
 	vec4 camera_eye;
-	vec4 camera_direction;
+	vec4 camera_center;
 	float z_far;
 }kernelsamples;
 
@@ -34,7 +34,7 @@ layout(location = 0) out float outColor;
 
 vec4 ambient_occlusion;
 
-const vec2 window = vec2(2560.0, 1440.0);
+const vec2 window = vec2(1920.0, 1080.0);
 
 float tc_depth(in vec2 tc)
 {
@@ -77,8 +77,8 @@ void main()
 	vec2 depths_size_inversed = vec2(1.0) / depths_size;
 	vec2 tc_depths = gl_FragCoord.xy / window;
 	vec3 wc_normal = texture(gNormal, tc_depths).xyz;
-	float ndc_linear_depth = -ec_depth(vec2(1.0 - tc_depths.x, tc_depths.y)) / kernelsamples.z_far;
-	vec3 wc_positions = kernelsamples.camera_eye.xyz + (kernelsamples.camera_direction.xyz + kernelsamples.camera_eye_.xyz) * ndc_linear_depth;
+	float ndc_linear_depth = -ec_depth(tc_depths) / 1000;
+	vec3 wc_positions = kernelsamples.camera_eye.xyz + normalize((kernelsamples.camera_center.xyz - kernelsamples.camera_eye.xyz)) * ndc_linear_depth;
 
 	vec3 ec_position = (camera.view * vec4(wc_positions, 1.0)).xyz;
 	float ec_position_depth = ec_position.z;

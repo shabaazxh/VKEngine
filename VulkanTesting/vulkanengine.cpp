@@ -9,12 +9,9 @@ void VE::vulkanEngine::initEngine() {
 
 	std::cout << "Launching Engine " << std::endl;
 
-	EngineWindow = std::make_unique<VE::Window>(2560, 1440, "title");
+	EngineWindow = std::make_unique<VE::Window>(1920, 1080, "title");
 	EngineWindow->initWindow();
-
-	CameraMovementInput = std::make_unique<Input>(EngineWindow->getWindow(), glm::vec3(0.5f, .1f, 11.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
+	//glfwSetFramebufferSizeCallback(EngineWindow->getWindow(), framebufferResizeCallback);
 }
 
 void VE::vulkanEngine::initVulkan() {
@@ -30,11 +27,12 @@ void VE::vulkanEngine::mainloop() {
 
 	while (!glfwWindowShouldClose(EngineWindow->getWindow())) {
 		renderer->processInput(EngineWindow->getWindow());
-		//glfwSetCursorPosCallback(EngineWindow->getWindow(), mouse_callback);
+		glfwSetCursorPosCallback(EngineWindow->getWindow(), &MouseController::callback);
 		renderer->drawFrame();
 		glfwPollEvents();
 	}
 	vkDeviceWaitIdle(vkDevice->getDevice());
+
 }
 
 void VE::vulkanEngine::run() {
@@ -49,6 +47,8 @@ void VE::vulkanEngine::Rendering() {
 
 	std::cout << "Initialising Rendering resources" << std::endl;
 
+	//Input Camera(EngineWindow->getWindow(), glm::vec3(0.0f, 0.0f, 10.0f),
+	//	glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	VkImage DepthpositionImage;
 	VkImageView DepthpositionsImageView;
@@ -73,6 +73,7 @@ void VE::vulkanEngine::Rendering() {
 	renderPass->createSSAORenderPass();
 	renderPass->createSSAOBlurRenderPass();
 	renderPass->createRenderPass_Positions(VK_FORMAT_R32G32B32A32_SFLOAT);
+	renderPass->createImGuiRenderPass(shadowDepth);
 
 	/** DESCRIPTORSET LAYOUT **/
 	descriptorSetLayout = std::make_unique<DescriptorSetLayout>(vkDevice->getDevice());
@@ -88,7 +89,7 @@ void VE::vulkanEngine::Rendering() {
 	GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
 	SSAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
-	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/aao.frag.spv");
+	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAOImp.frag.spv");
 
 	SSAOBlurPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
 	SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv", "shaders/ssao/SSAOBlur.frag.spv");
@@ -103,7 +104,10 @@ void VE::vulkanEngine::Rendering() {
 	MainModelPipeline->createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
 
 	FloorPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
-	FloorPipeline->createGraphicsPipeline("shaders/Object/textureShader.vert.spv", "shaders/Object/textureShader.frag.spv");
+	FloorPipeline->createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
+
+	CubeMapPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
+	CubeMapPipeline->createGraphicsPipeline("shaders/Object/cubemap.vert.spv", "shaders/Object/cubemap.frag.spv");
 
 	VE::QueueFamilyIndices indices = vkDevice->findQueueFamilies(vkDevice->getPhysicalDevice());
 	commandPool = std::make_unique<CommandPool>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), surface, indices.graphics);
@@ -131,11 +135,10 @@ void VE::vulkanEngine::Rendering() {
 	frameBuffers->createGeometryPassFrameBuffer(renderPass->GetGeometryPassRenderPass(), ImageRes->GetGeometryImageView(), ImageRes->GetPositionImageView(), ImageRes->GetgNormalsImageView(), ImageRes->GetAlbedoImageView(), ImageRes->getDepthImageView());
 	frameBuffers->createSSAOQuadFrameBuffer(renderPass->GetSSAORenderPass(), ImageRes->GetSSAOImageView());
 	frameBuffers->createSSAOBlurQuadFrameBuffer(renderPass->GetSSAOBlurRenderPass(), ImageRes->GetSSAOBlurImageView());
-	
 	frameBuffers->createFramebuffer(renderPass->GetRenderPass(), positionsfb);
 
 	ImageTools::imageInfo F1Image{};
-	F1Image.DiffuseLocation = "Textures/white.png";
+	F1Image.DiffuseLocation = "Textures/KAMEN.jpg";
 	F1Image.specularLocation = "Textures/white.png";
 	F1Image.AOLocation = "Textures/white.png";
 	F1Image.EmissionLocation = "Textures/white.png";
@@ -147,25 +150,30 @@ void VE::vulkanEngine::Rendering() {
 	FloorImageInfo.AOLocation = "Textures/white.png";
 	FloorImageInfo.EmissionLocation = "Textures/white.png";
 
+	ImageTools::HDRImage IBLImage{};
+	IBLImage.HDRImageLocations = "Textures/GravelPlaza_Env.hdr";
+	ImageRes->LoadHDRImage(IBLImage);
+
 	ImageRes->createTextureImage(FloorImageInfo);
 	ImageRes->createTextureSampler();
 	ImageRes->createSceneSampler();
 	ImageRes->createRepeatSampler();
 
-	std::array<glm::vec3, 3> CameraMovement = { CameraMovementInput->getCameraPos(), CameraMovementInput->getCameraFront(), CameraMovementInput->getcameraUp() };
-
 	Buffer positionsQuad = Buffer(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	positionsQuad.createVertexBuffer(sizeof(QuadData.Model.GetQuadVertex()[0])* QuadData.Model.GetQuadVertex().size(), QuadData.Model.GetQuadVertex());
 	positionsQuad.createIndexBuffer(sizeof(QuadData.Model.GetQuadIncies()[0])* QuadData.Model.GetQuadIncies().size(), QuadData.Model.GetQuadIncies());
 
-	MainModelBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
-	
-	F1Car.Model.LoadModel("Models/Winter.obj"); //f1_onthefloor f1carwithcubes
+	F1Car.Model.LoadModel("Models/SponzaScene.obj"); //f1_onthefloor f1carwithcubes
 	Floor.Model.LoadModel("Models/floor.obj");
+	CubeMap.Model.LoadModel("Models/CubeMap.obj");
 
 	LightBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	LightBuffer->createUniformBuffer(sizeof(Light));
+
+	Light_2_Buffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+	Light_2_Buffer->createUniformBuffer(sizeof(Light));
 	
+	MainModelBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	MainModelBuffer->createVertexBuffer(sizeof(F1Car.Model.getVertexData()[0]) * F1Car.Model.getVertexData().size(), F1Car.Model.getVertexData());
 	MainModelBuffer->createIndexBuffer(sizeof(F1Car.Model.getIndexData()[0]) * F1Car.Model.getIndexData().size(), F1Car.Model.getIndexData());
 	MainModelBuffer->createUniformBuffer(sizeof(UniformBufferObject));
@@ -174,6 +182,12 @@ void VE::vulkanEngine::Rendering() {
 	FloorObjectBuffer->createVertexBuffer(sizeof(Floor.Model.getVertexData()[0]) * Floor.Model.getVertexData().size(), Floor.Model.getVertexData());
 	FloorObjectBuffer->createIndexBuffer(sizeof(Floor.Model.getIndexData()[0])* Floor.Model.getIndexData().size(), Floor.Model.getIndexData());
 	FloorObjectBuffer->createUniformBuffer(sizeof(UniformBufferObject));
+
+	// CubeMap buffer 
+	CubeMapBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+	CubeMapBuffer->createVertexBuffer(sizeof(CubeMap.Model.getVertexData()[0])* CubeMap.Model.getVertexData().size(), CubeMap.Model.getVertexData());
+	CubeMapBuffer->createIndexBuffer(sizeof(CubeMap.Model.getIndexData()[0])* CubeMap.Model.getIndexData().size(), CubeMap.Model.getIndexData());
+	CubeMapBuffer->createUniformBuffer(sizeof(UniformBufferObject));
 
 	QuadBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	QuadBuffer->createVertexBuffer(sizeof(QuadData.Model.GetQuadVertex()[0]) * QuadData.Model.GetQuadVertex().size(), QuadData.Model.GetQuadVertex());
@@ -190,6 +204,7 @@ void VE::vulkanEngine::Rendering() {
 		MainModelBuffer->getUniformBuffers(),
 		LightBuffer->getUniformBuffers(),
 		SSAOQuadBuffer->getUniformBuffers(),
+		Light_2_Buffer->getUniformBuffers(),
 		descriptorSetLayout->getDescriptorSetLayout(),
 		descriptorSetLayout->GetQuadDescriptorSetLayout(),
 		descriptorSetLayout->GetSSAODescriptorSetLayout(),
@@ -217,14 +232,33 @@ void VE::vulkanEngine::Rendering() {
 		F1Image.AOImageView,
 		F1Image.EmissionImageView,
 		ImageRes->getDepthImageView(),
-		DepthpositionsImageView);
+		DepthpositionsImageView,
+		IBLImage.HDRImageView);
 
 	descriptors->createDescriptorPool();
+	descriptors->ImGuiCreateDescriptorPool();
 	descriptors->createDescriptorSets();
+
+	imgui = std::make_unique<ImGuiInt>(
+		EngineWindow->getWindow(),
+		instance,
+		vkDevice->getPhysicalDevice(),
+		vkDevice->getDevice(),
+		vkDevice->getGraphicsQueue(),
+		descriptors->GetImGuiDescriptorPool(),
+		commandPool->getCommandPool(),
+		swapChain->getSwapChainImages(),
+		renderPass->GetQuadRenderPass(),
+		surface,
+		vkDevice->getPresentQueue()
+		);
+
+	imgui->ImGuiInit();
 
 	commandBuffers = std::make_unique<CommandBuffers>(
 		vkDevice->getDevice(),
 		frameBuffers->getSwapChainFramebuffers(),
+		vkDevice->getGraphicsQueue(),
 		commandPool->getCommandPool(),
 		renderPass->GetSceneRenderPass(),
 		swapChain->getSwapChainExtent(),
@@ -278,9 +312,19 @@ void VE::vulkanEngine::Rendering() {
 		positionsPipeline->getPipelineLayout(),
 		F1Car.Model.getIndexData(),
 		Floor.Model.getIndexData(),
-		FloorObjectBuffer->getIndexBuffer());
+		CubeMap.Model.getIndexData(),
+		FloorObjectBuffer->getIndexBuffer(),
+		CubeMapBuffer->getVertexBuffer(),
+		CubeMapBuffer->getIndexBuffer(),
+		CubeMapPipeline->getGraphicsPipeline(),
+		CubeMapPipeline->getPipelineLayout());
 
 	commandBuffers->createCommandBuffers();
+
+	
+	frame::frameData f{};
+	f.framebuffer = frameBuffers->getSwapChainFramebuffers();
+	f.renderPass = renderPass->GetImGuiRenderPass();
 
 	renderer = std::make_unique<Renderer>(
 		vkDevice->getDevice(),
@@ -294,10 +338,48 @@ void VE::vulkanEngine::Rendering() {
 		commandPool->getCommandPool(),
 		MainModelBuffer->getUniformBuffersMemory(),
 		LightBuffer->getUniformBuffersMemory(),
+		Light_2_Buffer->getUniformBuffersMemory(),
 		SSAOQuadBuffer->getUniformBuffersMemory(),
-		CameraMovement);
+		f,
+		framebufferResized);
+
 	
 	renderer->createSyncObjects();
+
+	MouseController::MouseControl = &renderer->GetCamera();
+
+}
+
+void VE::vulkanEngine::recreateSwapChain()
+{
+	ImageResource DepthFormat(vkDevice->getPhysicalDevice());
+	VkFormat shadowDepth = DepthFormat.findDepthFormat();
+
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(EngineWindow->getWindow(), &width, &height);
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(EngineWindow->getWindow(), &width, &height);
+		glfwWaitEvents();
+	}
+
+
+	vkDeviceWaitIdle(vkDevice->getDevice());
+
+	cleanupSwapChain();
+	swapChain->createSwapChain();
+	ImageRes->createImageResources(swapChain->getSwapChainExtent());
+
+
+	/** RENDER PASSES **/
+	renderPass->createSceneRenderPass(shadowDepth);
+	renderPass->createShadowRenderPass(shadowDepth);
+	renderPass->createQuadRenderPass();
+	renderPass->createQuadRenderPass();
+	renderPass->createGeometryPassRenderPass(shadowDepth);
+	renderPass->createSSAORenderPass();
+	renderPass->createSSAOBlurRenderPass();
+	renderPass->createRenderPass_Positions(VK_FORMAT_R32G32B32A32_SFLOAT);
+	renderPass->createImGuiRenderPass(shadowDepth);
 
 }
 
@@ -348,22 +430,44 @@ void VE::vulkanEngine::cleanup() {
 	vkDestroyImage(vkDevice->getDevice(), ImageRes->getDepthImage(), nullptr);
 	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSceneImage(), nullptr);
 	vkDestroyImage(vkDevice->getDevice(), ImageRes->getShadowImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetGeometryImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetAlbedoImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetNoiseImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetPositionImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSpecImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSSImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSSAOImage(), nullptr);
+	vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSSAOBlurImage(), nullptr);
 
 	// Image view
 	vkDestroyImageView(vkDevice->getDevice(), ImageRes->getTextureImageView(), nullptr);
 	vkDestroyImageView(vkDevice->getDevice(), ImageRes->getNormImageView(), nullptr);
 	vkDestroyImageView(vkDevice->getDevice(), ImageRes->getshadowImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->getDepthImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetAlbedoImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetGeometryImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetgNormalsImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetPositionImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetNoiseImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetSceneImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetSpecImageView(), nullptr);
+	vkDestroyImageView(vkDevice->getDevice(), ImageRes->GetSSAOImageView(), nullptr);
 
 	// Image memory
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->getTextureImageMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->getDethMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSceneImageMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->getShadowMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetAlbedoImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetGeometryImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetgNormalsImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetPositionImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetNoiseImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSceneImageMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSpecImageeMemory(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSSAOBlurImageMemory(), nullptr);
 
-	vkDestroyBuffer(vkDevice->getDevice(), MainModelBuffer->getIndexBuffer(), nullptr);
-	vkFreeMemory(vkDevice->getDevice(), MainModelBuffer->getIndexBufferMemory(), nullptr);
-
-	// Buffer
+	// Main model buffer
 	vkDestroyBuffer(vkDevice->getDevice(), MainModelBuffer->getVertexBuffer(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), MainModelBuffer->getVertexBufferMemory(), nullptr);
 
@@ -373,9 +477,21 @@ void VE::vulkanEngine::cleanup() {
 	vkDestroyBuffer(vkDevice->getDevice(), QuadBuffer->getIndexBuffer(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), QuadBuffer->getIndexBufferMemory(), nullptr);
 
+	// SSAO Quad Buffer
+	vkDestroyBuffer(vkDevice->getDevice(), SSAOQuadBuffer->getVertexBuffer(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), SSAOQuadBuffer->getVertexBufferMemory(), nullptr);
+	vkDestroyBuffer(vkDevice->getDevice(), SSAOQuadBuffer->getIndexBuffer(), nullptr);
+	vkFreeMemory(vkDevice->getDevice(), SSAOQuadBuffer->getIndexBufferMemory(), nullptr);
+
 	vkDestroyBuffer(vkDevice->getDevice(), FloorObjectBuffer->getVertexBuffer(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), FloorObjectBuffer->getVertexBufferMemory(), nullptr);
 
+	// Destroy Light uniform buffer
+	for (size_t i = 0; i < LightBuffer->getUniformBuffers().size(); i++) {
+		vkDestroyBuffer(vkDevice->getDevice(), LightBuffer->getUniformBuffers()[i], nullptr);
+		vkFreeMemory(vkDevice->getDevice(), LightBuffer->getUniformBuffersMemory()[i], nullptr);
+	}
+	
 	// Destroy descriptor set layouts
 	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->getDescriptorSetLayout(), nullptr);
 	vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->GetQuadDescriptorSetLayout(), nullptr);
@@ -489,6 +605,37 @@ std::vector<const char*> VE::vulkanEngine::GetRequiredExtensions() {
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 	return extensions;
+}
+
+void VE::vulkanEngine::InitImGUI(GLFWwindow* window)
+{
+	VkDescriptorPoolSize pool_sizes[] =
+	{
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+	};
+
+	VkDescriptorPoolCreateInfo pool_info = {};
+	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	pool_info.maxSets = 1000;
+	pool_info.poolSizeCount = std::size(pool_sizes);
+	pool_info.pPoolSizes = pool_sizes;
+
+	VkDescriptorPool imguipool;
+	if (vkCreateDescriptorPool(device, &pool_info, nullptr, &imguipool) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create descriptor pool for imgui");
+	}
+
 }
 
 void VE::vulkanEngine::createInstance() {

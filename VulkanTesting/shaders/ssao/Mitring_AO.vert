@@ -19,7 +19,7 @@ layout(location = 2) out vec3 worldCoordinatesCameraDirection;
 
 void main()
 {
-	//gl_Position.z = (gl_Position.z + gl_Position.w) / 2.0;
+	
 	gl_Position = vec4(inPosition, 1.0);
 	fragColor = inColor;
 	uvCoords = uv;

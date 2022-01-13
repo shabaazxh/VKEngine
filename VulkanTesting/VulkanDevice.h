@@ -25,7 +25,7 @@ namespace VE {
 
 	class VulkanDevice {
 	public:
-
+		VulkanDevice(VkSurfaceKHR surface) : surface{ surface } {}
 		VulkanDevice(VkInstance& instance, VkSurfaceKHR& surface) 
 			: instance{ instance }, surface{ surface } { pickPhysicalDevice(instance); }
 
@@ -51,5 +51,6 @@ namespace VE {
 		VkQueue				graphics;
 		VkQueue				present;
 	};
+
 
 }

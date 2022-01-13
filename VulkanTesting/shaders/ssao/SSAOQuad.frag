@@ -11,12 +11,14 @@ layout(binding = 5) uniform UniformBufferObject {
     float time;
 }camera;
 
+int kernelSize = 64;
+
 layout(binding = 4) uniform KernelSample {
 	vec3 samples[64];
 	mat4 projection;
 }kernelsamples;
 
-int kernelSize = 64;
+
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
@@ -24,14 +26,6 @@ layout(location = 1) in vec2 uvCoords;
 layout(location = 0) out float outColor;
 
 const vec2 noiseScale = vec2(1920.0/4.0, 1080.0/4.0);
-
-//vec3 computeViewPosFromDepth(vec2 texcoords) {
-	
-	//vec4 projPos = vec4(vec3(texcoords, texture(depthTexture, texcoords).r) * 2.0 - 1.0, 1.0);
-	//vec4 viewPos = kernelsamples.projection * projPos;
-
-	//return viewPos.xyz / viewPos.w;
-//}
 
 
 void main() {
