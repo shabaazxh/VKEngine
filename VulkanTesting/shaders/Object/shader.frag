@@ -6,6 +6,8 @@ layout(binding = 1) uniform Light {
     vec4 lightColor;
     vec4 viewPos;
     mat4 lightSpaceMatrix;
+    float Linear;
+    float Quadratic;
 }LightUBO;
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -14,12 +16,12 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
     vec3 cameraPosition;
     vec3 albedo;
+    vec4 lightPositions[2];
+    vec4 lightColors[2];
     float metallic;
     float roughness;
     float ao;
     float time;
-    vec4 lightPositions[2];
-    vec4 lightColors[2];
 }camera;
 
 
@@ -176,7 +178,7 @@ void main() {
 
     float shadow = shadowResult(FragPosLightSpace);
     vec3 ambient = vec3(0.03) * camera.albedo * camera.ao;
-    vec3 color = ambient + Lo + (1.0 - shadow);
+    vec3 color = ambient + Lo;
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));
@@ -219,7 +221,7 @@ void main() {
     float shadow = shadowResult(FragPosLightSpace);
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
-    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
- */
-    outColor = vec4(1.0, 1.0, 1.0, 1.0);
+    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma)); */
+
+    outColor = vec4(color, 1.0);
 }

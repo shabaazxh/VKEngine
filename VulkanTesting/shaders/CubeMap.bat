@@ -3,5 +3,12 @@ C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/V
 
 
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOImp.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOImp.frag.spv
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aaao.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aaao.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/other.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/other.frag.spv
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/another.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/another.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/attem4.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/attem4.frag.spv
+
 
 pause

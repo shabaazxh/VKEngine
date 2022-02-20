@@ -14,14 +14,6 @@ void VE::vulkanEngine::initEngine() {
 	//glfwSetFramebufferSizeCallback(EngineWindow->getWindow(), framebufferResizeCallback);
 }
 
-void VE::vulkanEngine::initVulkan() {
-	
-	std::cout << "Initialising Vulkan .. " << std::endl;
-	createInstance();
-	createSurface();
-	Rendering();
-
-}
 
 void VE::vulkanEngine::mainloop() {
 
@@ -38,26 +30,25 @@ void VE::vulkanEngine::mainloop() {
 void VE::vulkanEngine::run() {
 
 	initEngine();
-	initVulkan();
+	VulkanCore::InitVulkan();
+	EngineWindow->CreateSurface(VulkanCore::GetInstance());
+	Rendering();
 	mainloop();
-	cleanup();
+	CleanUp();
 }
 
 void VE::vulkanEngine::Rendering() {
 
 	std::cout << "Initialising Rendering resources" << std::endl;
 
-	//Input Camera(EngineWindow->getWindow(), glm::vec3(0.0f, 0.0f, 10.0f),
-	//	glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
 	VkImage DepthpositionImage;
 	VkImageView DepthpositionsImageView;
 	VkDeviceMemory DepthpositionsMemory;
 
-	vkDevice = std::make_unique<VE::VulkanDevice>(instance, surface);
+	vkDevice = std::make_unique<VE::VulkanDevice>(VulkanCore::GetInstance(), EngineWindow->getSurface());
 	vkDevice->createDevice();
 
-	swapChain = std::make_unique<VE::SwapChain>(instance, vkDevice->getDevice(), vkDevice->getPhysicalDevice(), surface, EngineWindow->getWindow());
+	swapChain = std::make_unique<VE::SwapChain>(VulkanCore::GetInstance(), vkDevice->getDevice(), vkDevice->getPhysicalDevice(), EngineWindow->getSurface(), EngineWindow->getWindow());
 	swapChain->createSwapChain();
 
 	ImageResource DepthFormat(vkDevice->getPhysicalDevice());
@@ -89,7 +80,7 @@ void VE::vulkanEngine::Rendering() {
 	GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
 	SSAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
-	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAOImp.frag.spv");
+	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/another.frag.spv");
 
 	SSAOBlurPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
 	SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv", "shaders/ssao/SSAOBlur.frag.spv");
@@ -110,7 +101,7 @@ void VE::vulkanEngine::Rendering() {
 	CubeMapPipeline->createGraphicsPipeline("shaders/Object/cubemap.vert.spv", "shaders/Object/cubemap.frag.spv");
 
 	VE::QueueFamilyIndices indices = vkDevice->findQueueFamilies(vkDevice->getPhysicalDevice());
-	commandPool = std::make_unique<CommandPool>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), surface, indices.graphics);
+	commandPool = std::make_unique<CommandPool>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), EngineWindow->getSurface(), indices.graphics);
 	commandPool->createCommandPool(indices.graphics.value());
 
 	ImageRes = std::make_unique<ImageResource>(vkDevice->getDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), vkDevice->getPhysicalDevice(), swapChain->getSwapChainImageFormat());
@@ -138,7 +129,7 @@ void VE::vulkanEngine::Rendering() {
 	frameBuffers->createFramebuffer(renderPass->GetRenderPass(), positionsfb);
 
 	ImageTools::imageInfo F1Image{};
-	F1Image.DiffuseLocation = "Textures/KAMEN.jpg";
+	F1Image.DiffuseLocation = "Textures/white.png";
 	F1Image.specularLocation = "Textures/white.png";
 	F1Image.AOLocation = "Textures/white.png";
 	F1Image.EmissionLocation = "Textures/white.png";
@@ -163,7 +154,7 @@ void VE::vulkanEngine::Rendering() {
 	positionsQuad.createVertexBuffer(sizeof(QuadData.Model.GetQuadVertex()[0])* QuadData.Model.GetQuadVertex().size(), QuadData.Model.GetQuadVertex());
 	positionsQuad.createIndexBuffer(sizeof(QuadData.Model.GetQuadIncies()[0])* QuadData.Model.GetQuadIncies().size(), QuadData.Model.GetQuadIncies());
 
-	F1Car.Model.LoadModel("Models/SponzaScene.obj"); //f1_onthefloor f1carwithcubes
+	F1Car.Model.LoadModel("Models/Winter.obj"); //f1_onthefloor f1carwithcubes
 	Floor.Model.LoadModel("Models/floor.obj");
 	CubeMap.Model.LoadModel("Models/CubeMap.obj");
 
@@ -241,7 +232,7 @@ void VE::vulkanEngine::Rendering() {
 
 	imgui = std::make_unique<ImGuiInt>(
 		EngineWindow->getWindow(),
-		instance,
+		VulkanCore::GetInstance(),
 		vkDevice->getPhysicalDevice(),
 		vkDevice->getDevice(),
 		vkDevice->getGraphicsQueue(),
@@ -249,7 +240,7 @@ void VE::vulkanEngine::Rendering() {
 		commandPool->getCommandPool(),
 		swapChain->getSwapChainImages(),
 		renderPass->GetQuadRenderPass(),
-		surface,
+		EngineWindow->getSurface(),
 		vkDevice->getPresentQueue()
 		);
 
@@ -322,9 +313,9 @@ void VE::vulkanEngine::Rendering() {
 	commandBuffers->createCommandBuffers();
 
 	
-	frame::frameData f{};
-	f.framebuffer = frameBuffers->getSwapChainFramebuffers();
-	f.renderPass = renderPass->GetImGuiRenderPass();
+	frame::frameData frameInformation{};
+	frameInformation.framebuffer = frameBuffers->getSwapChainFramebuffers();
+	frameInformation.renderPass = renderPass->GetImGuiRenderPass();
 
 	renderer = std::make_unique<Renderer>(
 		vkDevice->getDevice(),
@@ -340,7 +331,7 @@ void VE::vulkanEngine::Rendering() {
 		LightBuffer->getUniformBuffersMemory(),
 		Light_2_Buffer->getUniformBuffersMemory(),
 		SSAOQuadBuffer->getUniformBuffersMemory(),
-		f,
+		frameInformation,
 		framebufferResized);
 
 	
@@ -411,10 +402,10 @@ void VE::vulkanEngine::cleanupSwapChain() {
 }
 
 
-void VE::vulkanEngine::cleanup() {
+void VE::vulkanEngine::CleanUp() {
 
-	if (enableValidationLayers) {
-		DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+	if (VulkanCore::GetValidationLayerStatus()) {
+		DestroyDebugUtilsMessengerEXT(VulkanCore::GetInstance(), VulkanCore::GetDebugMessenger(), nullptr);
 	}
 
 	cleanupSwapChain();
@@ -464,7 +455,10 @@ void VE::vulkanEngine::cleanup() {
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetPositionImageMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetNoiseImageMemory(), nullptr);
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSceneImageMemory(), nullptr);
-	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSpecImageeMemory(), nullptr);
+	if (ImageRes->GetSpecImageeMemory() != VK_NULL_HANDLE) {
+		vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSpecImageeMemory(), nullptr);
+
+	}
 	vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSSAOBlurImageMemory(), nullptr);
 
 	// Main model buffer
@@ -509,102 +503,13 @@ void VE::vulkanEngine::cleanup() {
 	//Destroy the logical device
 	vkDestroyDevice(vkDevice->getDevice(), nullptr);
 	//Destroy surface to window
-	vkDestroySurfaceKHR(instance, surface, nullptr);
+	vkDestroySurfaceKHR(VulkanCore::GetInstance(), EngineWindow->getSurface(), nullptr);
 	//Destroy Vulkan instance
-	vkDestroyInstance(instance, nullptr);
+	vkDestroyInstance(VulkanCore::GetInstance(), nullptr);
 
 	glfwDestroyWindow(EngineWindow->getWindow());
 	glfwTerminate();
 
-}
-
-void VE::vulkanEngine::createSurface() {
-
-	if (glfwCreateWindowSurface(instance, EngineWindow->getWindow(), nullptr, &surface) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create window surface!");
-	}
-}
-
-VkResult VE::vulkanEngine::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-
-	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-	}
-	else {
-		return VK_ERROR_EXTENSION_NOT_PRESENT;
-	}
-
-}
-
-void VE::vulkanEngine::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-	
-	createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = VE::Validation::debugCallback;
-}
-
-void VE::vulkanEngine::setupDebugMessenger() {
-
-	if (!enableValidationLayers) return;
-
-	VkDebugUtilsMessengerCreateInfoEXT createInfo;
-	populateDebugMessengerCreateInfo(createInfo);
-
-	if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-		throw std::runtime_error("failed to set up debug messenger!");
-	}
-}
-
-void VE::vulkanEngine::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-	
-	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-	if (func != nullptr) {
-		func(instance, debugMessenger, pAllocator);
-	}
-}
-
-bool VE::vulkanEngine:: checkValidationLayerSupport() {
-
-	uint32_t layerCount;
-	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-	std::vector<VkLayerProperties> availableLayers(layerCount);
-	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-	for (const char* layerName : validationLayers) {
-		bool layerFound = false;
-
-		for (const auto& layerProperties : availableLayers) {
-			if (strcmp(layerName, layerProperties.layerName) == 0) {
-				layerFound = true;
-				break;
-			}
-		}
-
-		if (!layerFound) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-std::vector<const char*> VE::vulkanEngine::GetRequiredExtensions() {
-
-	uint32_t glfwExtensionCount = 0;
-
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-	if (enableValidationLayers) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-	return extensions;
 }
 
 void VE::vulkanEngine::InitImGUI(GLFWwindow* window)
@@ -632,48 +537,9 @@ void VE::vulkanEngine::InitImGUI(GLFWwindow* window)
 	pool_info.pPoolSizes = pool_sizes;
 
 	VkDescriptorPool imguipool;
-	if (vkCreateDescriptorPool(device, &pool_info, nullptr, &imguipool) != VK_SUCCESS) {
+	if (vkCreateDescriptorPool(vkDevice->getDevice(), &pool_info, nullptr, &imguipool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create descriptor pool for imgui");
 	}
 
 }
 
-void VE::vulkanEngine::createInstance() {
-
-	if (enableValidationLayers && !checkValidationLayerSupport()) {
-		throw std::runtime_error("validation layers requested, but not available!");
-	}
-
-	VkApplicationInfo appInfo{};
-	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Vulkan Engine";
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "No Engine";
-	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
-
-	VkInstanceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	createInfo.pApplicationInfo = &appInfo;
-
-	auto extensions = GetRequiredExtensions();
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-	createInfo.ppEnabledExtensionNames = extensions.data();
-
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-	if (enableValidationLayers) {
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
-
-		/*populateDebugMessengerCreateInfo(debugCreateInfo);
-		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;*/
-	}
-	else {
-		createInfo.enabledLayerCount = 0;
-		createInfo.pNext = nullptr;
-	}
-
-	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create vulkan instance!");
-	}
-}

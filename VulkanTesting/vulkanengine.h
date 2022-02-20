@@ -42,20 +42,16 @@
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_vulkan.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
+#include "VulkanCore.h"
 
 namespace VE {
 
 	static std::unique_ptr<Input> CameraMovementInput;
 
-	class vulkanEngine {
-
-		const std::vector<const char*> validationLayers = {
-			"VK_LAYER_KHRONOS_validation"
-		};
+	class vulkanEngine : public VulkanCore  {
 
 	public:
 		
-
 		struct MouseController {
 
 		    inline static Input* MouseControl;
@@ -70,42 +66,22 @@ namespace VE {
 			Object Model;
 		};
 
-		vulkanEngine(bool enableValidationLayers) : enableValidationLayers{ enableValidationLayers } {}
+		vulkanEngine(bool enableValidationLayers) : VulkanCore(enableValidationLayers) {}
 
 		void run();
-
-		VkInstance getInstance() const { return instance; }
 
 		bool framebufferResized = false;
 	private:
 
+		void Rendering() override;
+
 		void initEngine();
-		void initVulkan();
 		void mainloop();
 		void cleanupSwapChain();
-		void cleanup();
-
-		void createInstance();
-		void createSurface();
-		void Rendering();
-
+		void CleanUp();
 		void recreateSwapChain();
-
-		// Validation Layers
-		bool checkValidationLayerSupport();
-		void setupDebugMessenger();
-		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-		void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-		VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-		std::vector<const char*> GetRequiredExtensions();
-
 		void InitImGUI(GLFWwindow* window);
 
-
-		VkInstance instance;
-		VkDevice device;
-		VkSurfaceKHR surface;
-		VkDebugUtilsMessengerEXT debugMessenger;
 		bool enableValidationLayers = false;
 		std::unique_ptr<VE::Window> EngineWindow;
 		Input* mouseInput;
@@ -147,8 +123,6 @@ namespace VE {
 		Models QuadData;
 		Models Floor;
 		Models CubeMap;
-
-		glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 
 	};
 

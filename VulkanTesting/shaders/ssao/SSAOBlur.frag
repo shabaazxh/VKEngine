@@ -15,6 +15,21 @@ layout(binding = 5) uniform Light {
     float Quadratic;
 }LightUBO;
 
+layout(std140, binding = 4) uniform KernelSample {
+    mat4 projection;
+    mat4 mvMatrix;
+    vec4 samples[64];
+    vec4 cameraEye;
+    vec4 cameraCenter;
+    float z_far;
+    float radius;
+    float bias;
+    float scale;
+    float distScale;
+    float attScale;
+    bool isSSAOOn;
+}kernelsamples;
+
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;

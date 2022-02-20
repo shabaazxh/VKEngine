@@ -26,7 +26,7 @@ namespace VE {
 	class VulkanDevice {
 	public:
 		VulkanDevice(VkSurfaceKHR surface) : surface{ surface } {}
-		VulkanDevice(VkInstance& instance, VkSurfaceKHR& surface) 
+		VulkanDevice(VkInstance instance, VkSurfaceKHR surface) 
 			: instance{ instance }, surface{ surface } { pickPhysicalDevice(instance); }
 
 		void				pickPhysicalDevice(VkInstance& instance);

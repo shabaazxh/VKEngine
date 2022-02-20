@@ -11,20 +11,40 @@ layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
 
 
-layout(binding = 5) uniform UniformBufferObject {
+layout(std140, binding = 5) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec4 cameraPosition;
+    vec3 albedo;
+    vec4 lightPositions[2];
+    vec4 lightColors[2];
+    float metallic;
+    float roughness;
+    float ao;
     float time;
 }camera;
 
 
-layout(binding = 4) uniform KernelSample {
-	vec3 samples[64];
+layout(std140, binding = 4) uniform KernelSample {
 	mat4 projection;
-	vec4 camera_eye;
-	vec4 camera_center;
+    mat4 mvMatrix;
+    vec4 samples[64];
+    vec4 cameraEye;
+    vec4 cameraCenter;
 	float z_far;
+	float radius;
+	float bias;
+	float scale;
+	float sampleDirections;
+	float num_sample_steps;
+	float sampling_step;
+	bool isSSAOOn;
+	float shadowScalar;
+	float shadowContrast;
+	float depthThreshold;
+	int sampleAmount;
+	int sampleTurns;
 }kernelsamples;
 
 layout(location = 0) out vec4 outColor;
@@ -32,12 +52,12 @@ layout(location = 0) out vec4 outColor;
 const vec2 window = vec2(1920.0, 1080.0);
 const vec2 noiseScale = vec2(1920.0/4.0, 1080.0/4.0);
 
-float sampleRadius = 1.0;
-int samples = 12;
+float sampleRadius = kernelsamples.radius;//3.348; // //1.0
+int samples = 12; //12
 int sampleTurns = 16;
-float depthThreshold = 0.0005;
-float shadowScalar = 1.0;
-float shadowContrast = 0.5;
+float depthThreshold = 0.000;
+float shadowScalar = kernelsamples.shadowScalar; //; //1.0
+float shadowContrast = kernelsamples.shadowContrast;//; //0.5
 const float epsilon = 0.0001;
 
 float randAngle()
@@ -55,7 +75,8 @@ void main()
 
 	// normals in view-space from g-buffer texture
 	vec3 N = normalize(texture(gNormal, vec2(1.0 - uvCoords.x, uvCoords.y))).xyz;
-	
+	//N.xyz = -N.xyz;
+
 	float aoValue = 0.0;
 	float perspectiveRadius = (sampleRadius * 100.0 / P.z);
 	

@@ -10,6 +10,7 @@
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_vulkan.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
+#include "VulkanTools.h"
 
 class CommandBuffers {
 public:
@@ -80,8 +81,6 @@ public:
 	void createCommandBuffers();
 
 	std::vector<VkCommandBuffer> getCommandBuffers() { return commandBuffers; }
-
-	void UI(VkCommandBuffer commandBuffer);
 
 	VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
 	void endSingleTimeCommnads(VkCommandBuffer commandBuffer, VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue);

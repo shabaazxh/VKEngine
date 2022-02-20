@@ -8,6 +8,7 @@
 #include <iostream>
 #include <array>
 #include "Input.h"
+#include "VulkanTools.h"
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_vulkan.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
@@ -19,12 +20,32 @@ namespace frame {
 	};
 }
 
+//namespace ImGuiControlsInfo {
+//	float radius = 0.02f;
+//}
+
 class Renderer {
 
 	
 public:
 
+	struct SSAOTools {
+		float radius = 1.0f;
+		float tangent_bias = 0.3f;
+		float scale;
+		float sampleDirections;
+		float num_sample_steps;
+		float sampling_step;
+		float shadowScalar = 1.0f;
+		float shadowContrast = 0.5f;
+		float depthThreshold = 0.000f;
+		int sampleAmount = 200;
+		int sampleTurns = 15;
+		float ambientLightLevel;
+		glm::vec4 lightPosition = glm::vec4(-2.0f, 4.0f, 0.0f, 1.0f);
+	};
 
+	SSAOTools SSAOController{};
 
 	Renderer(VkDevice device, VkSwapchainKHR swapChain, 
 		std::vector<VkCommandBuffer> commandBuffers, 
@@ -103,4 +124,7 @@ private:
 	float far_plane_light = 20.0f;
 
 	frame::frameData frameInfo;
+
+	float radius;
+
 };

@@ -34,7 +34,7 @@ Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain,
 	this->frameInfo = frameInfo;
 	this->frameBufferResized = frameBufferResized;
 
-	Camera = Input(window, glm::vec3(0.0f, 0.0f, 10.0f),
+	Camera = Input(window, glm::vec3(0.0f, 0.0f, -5.0f),
 		glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
@@ -57,7 +57,7 @@ void Renderer::drawFrame() {
 	//Mark the image as being in use by the frame
 	imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 
-	updateCommandBuffer(imageIndex);
+	updateCommandBuffer(imageIndex); //imgui
 
 	//HEREEE
 	updateUniformBuffers(imageIndex);
@@ -138,7 +138,7 @@ void Renderer::createSyncObjects() {
 void Renderer::processInput(GLFWwindow* window) {
 
 
-	float cameraSpeed = 0.1f;
+	float cameraSpeed = 0.02f;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		Camera.setCameraPos(Camera.getCameraPos() += cameraSpeed * Camera.getCameraFront());
@@ -230,13 +230,12 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	for (unsigned int i = 0; i < 64; i++) {
 		ks.samples[i] = ssaoKernel[i];
 	}
-	glm::vec4 lightpos = glm::vec4(-2.0f, 4.0f, 2.0f, 1.0f);
+	glm::vec4 lightpos = glm::vec4(-2.0f, 4.0f, 0.0f, 1.0f);
 
 	// Model, View & Projection
 	UniformBufferObject ubo{};
 	ubo.model = glm::mat4(1.0f);
 	ubo.model = glm::translate(ubo.model, glm::vec3(0.0f, 0.0f, 0.0f));
-	// camera movement : cameraMovement[0], cameraMovement[0] * cameraMovement[1], cameraMovement[2]
 	ubo.view = glm::lookAt(Camera.getCameraPos(), Camera.getCameraPos() + Camera.getCameraFront(), Camera.getcameraUp());
 	ubo.proj = glm::perspective(glm::radians(40.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 1000.0f);
 	ubo.proj[1][1] *= -1;
@@ -251,10 +250,26 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	ks.cameraEye = glm::vec4(Camera.getCameraPos(), 1.0f);
 	ks.cameraCenter = glm::vec4(Camera.getCameraFront(), 1.0);
 	ks.z_far = 1000;
+	ks.radius = SSAOController.radius;
+	ks.bias = SSAOController.tangent_bias;
+	ks.scale = SSAOController.scale;
+	ks.sampleDirections = SSAOController.sampleDirections;
+	ks.num_sample_steps = SSAOController.num_sample_steps;
+	ks.sampling_step = SSAOController.sampling_step;
+	ks.isSSAOOn = VE::Tools::enableSSAO;
+	ks.shadowScalar = SSAOController.shadowScalar;
+	ks.shadowContrast = SSAOController.shadowContrast;
+	ks.depthThreshold = SSAOController.depthThreshold;
+	ks.sampleAmount = SSAOController.sampleAmount;
+	ks.sampleTurns = SSAOController.sampleTurns;
+	ks.ambientLightLevel = SSAOController.ambientLightLevel;
+	//std::cout << "UNIFORM: " << ks.radius << std::endl;
+	//std::cout << "VALUE: " << radius << std::endl;
+
 
 	// Handling Lighting
 	Light lighting{};
-	lighting.position = glm::vec4(lightpos);
+	lighting.position = SSAOController.lightPosition;
 	lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
 	lighting.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
 	//lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
@@ -264,12 +279,12 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	lighting.lightColor = glm::vec4(1.0, 1.0f, 1.0, 1.0); //0.5f, 0.5f, 0.5f, 1.0
 	lighting.objectColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	lighting.viewPos = glm::vec4(Camera.getCameraPos(), 0.0f);
-	lighting.invertedNormals = false;
+	//lighting.invertedNormals = false;
 	lighting.Linear = 0.09;
 	lighting.Quadratic = 0.032;
 
 	Light Light_2{};
-	Light_2.position = glm::vec4(lightpos);
+	Light_2.position = glm::vec4(SSAOController.lightPosition);
 	Light_2.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
 	Light_2.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
 	Light_2.position.z = 1.0f + sin(glfwGetTime()) * 2.0f;
@@ -300,7 +315,7 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	vkUnmapMemory(device, LightBufferMemory[currentImage]);
 
 	vkMapMemory(device, Light_2_BufferMemory[currentImage], 0, sizeof(Light_2), 0, &data);
-	memcpy(data, &lighting, sizeof(lighting));
+	memcpy(data, &Light_2, sizeof(Light_2));
 	vkUnmapMemory(device, Light_2_BufferMemory[currentImage]);
 
 	vkMapMemory(device, SSAOKenrnelBufferMemory[currentImage], 0, sizeof(ks), 0, &data);
@@ -319,10 +334,27 @@ void Renderer::updateCommandBuffer(uint32_t currentImage)
 
 	static bool windowOpened = true;
 	static bool showDemoWindow = false;
-	if (ImGui::Begin("Rendertime", &windowOpened, 0))
+	if (windowOpened)
 	{
+		ImGui::Begin("Rendertime", &windowOpened, 0);
 		ImGui::Text("Frametime: %f", 1000.0f / ImGui::GetIO().Framerate);
 		ImGui::Checkbox("Show ImGui demo window", &showDemoWindow);
+		ImGui::Checkbox("Show current window", &windowOpened);
+		ImGui::Checkbox("Enable SSAO", &VE::Tools::enableSSAO);
+		ImGui::SliderFloat("Radius: ", &SSAOController.radius, 0.0f, 10.0f);
+		//ImGui::SliderFloat("Bias: ", &SSAOController.tangent_bias, 0.0f, 1.0f);
+		ImGui::SliderFloat("shadowScalar", &SSAOController.shadowScalar, 0.0f, 1.0f);
+		ImGui::SliderFloat("shadowContrast", &SSAOController.shadowContrast, 0.0f, 1.0f);
+		//ImGui::SliderFloat("depthThreshold", &SSAOController.depthThreshold, 0.000f, 0.001f);
+		//ImGui::SliderInt("samples", &SSAOController.sampleAmount, 0, 200);
+		ImGui::SliderFloat("ambientLightLevel", &SSAOController.ambientLightLevel, 0.0f, 10.0f);
+		//ImGui::SliderFloat4("LightZ: ", (float*)&SSAOController.lightPosition, -10.0f, 10.0f);+
+		//ImGui::SliderInt("sampleTurns", &SSAOController.sampleTurns, 0, 64);
+		//ImGui::SliderFloat("Tangent Bias: ", &SSAOController.tangent_bias, 0.2f, 0.3f);
+		//ImGui::SliderFloat("Scale: ", &SSAOController.scale, 0.0f, 20.0f);
+		ImGui::SliderFloat("Sample directions: ", &SSAOController.sampleDirections, 0.0f, 32.0f);
+		ImGui::SliderFloat("Sample steps: ", &SSAOController.sampling_step, 0.000f, 0.09f);
+		ImGui::SliderFloat("Number Sample steps: ", &SSAOController.num_sample_steps, 0.0f, 32.0f);
 		ImGui::End();
 	}
 

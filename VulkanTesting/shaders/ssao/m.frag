@@ -11,20 +11,41 @@ layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
 
 
-layout(binding = 5) uniform UniformBufferObject {
+layout(std140, binding = 5) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec4 cameraPosition;
+    vec3 albedo;
+    vec4 lightPositions[2];
+    vec4 lightColors[2];
+    float metallic;
+    float roughness;
+    float ao;
     float time;
 }camera;
 
 
-layout(binding = 4) uniform KernelSample {
-	vec3 samples[64];
-	mat4 projection;
-	vec4 camera_eye;
-	vec4 camera_center;
-	float z_far;
+layout(std140, binding = 4) uniform KernelSample {
+    mat4 projection;
+    mat4 mvMatrix;
+    vec4 samples[64];
+    vec4 cameraEye;
+    vec4 cameraCenter;
+    float z_far;
+    float radius;
+    float bias;
+    float scale;
+    float sampleDirections;
+    float num_sample_steps;
+    float sampling_step;
+    bool isSSAOOn;
+    float shadowScalar;
+    float shadowContrast;
+    float depthThreshold;
+    int sampleAmount;
+    int sampleTurns;
+    float ambientLightLevel;
 }kernelsamples;
 
 int kernelSize = 64;
@@ -87,7 +108,7 @@ void main()
 
 	const int base_samples = 0;
 	const int min_samples = 8;
-	const float radius = 30.0;
+	const float radius = kernelsamples.radius;
 	const float radius_squared = radius * radius;
 	const float bias = 0.3;
 

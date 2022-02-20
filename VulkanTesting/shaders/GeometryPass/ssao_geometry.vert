@@ -37,7 +37,7 @@ void main() {
     TexCoords = inTexCoord;
 
     mat3 normalMatrix = transpose(inverse(mat3(ubo.view * ubo.model)));
-    Normal = normalMatrix * (lightUniform.invertedNormals ? -aNormal : aNormal);
+    Normal = normalMatrix * aNormal;
 
     gl_Position = ubo.proj * viewPos;
 

@@ -69,17 +69,17 @@ namespace std {
 }
 
 struct UniformBufferObject {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
 	alignas(16) glm::vec4 cameraPostion;
 	alignas(16) glm::vec3 albedo;
-	float metallic;
-	float roughness;
-	float ao;
-	float time;
-	glm::vec4 lightPositions[2];
-	glm::vec4 lightColors[2];
+	alignas(16) glm::vec4 lightPositions[2];
+	alignas(16) glm::vec4 lightColors[2];
+	alignas(4) float metallic;
+	alignas(4) float roughness;
+	alignas(4) float ao;
+	alignas(4) float time;
 };
 
 struct Light {
@@ -88,19 +88,32 @@ struct Light {
 	alignas(16) glm::vec4 lightColor;
 	alignas(16) glm::vec4 viewPos;
 	alignas(16) glm::mat4 lightSpaceMatrix;
-	alignas(16) bool invertedNormals;
-	alignas(16) float Linear;
-	alignas(16) float Quadratic;
+	alignas(4) float Linear;
+	alignas(4) float Quadratic;
 };
 
 struct KernelSample {
-	alignas(16) glm::vec4 samples[64];
 	alignas(16) glm::mat4 projection;
+	alignas(16) glm::mat4 mvMatrix;
+	alignas(16) glm::vec4 samples[64];
 	alignas(16) glm::vec4 cameraEye;
 	alignas(16) glm::vec4 cameraCenter;
-	alignas(16) float z_far;
-	alignas(16) glm::mat4 mvMatrix;
+	alignas(4) float z_far;
+	alignas(4) float radius;
+	alignas(4) float bias;
+	alignas(4) float scale;
+	alignas(4) float sampleDirections;
+	alignas(4) float num_sample_steps;
+	alignas(4) float sampling_step;
+	alignas(1) bool isSSAOOn;
+	alignas(4) float shadowScalar;
+	alignas(4) float shadowContrast;
+	alignas(4) float depthThreshold;
+	alignas(4) int sampleAmount;
+	alignas(4) int sampleTurns;
+	alignas(4) float ambientLightLevel;
 };
+
 
 class Object {
 public:

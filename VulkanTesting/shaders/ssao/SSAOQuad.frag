@@ -4,18 +4,41 @@ layout(binding = 1) uniform sampler2D gPosition;
 layout(binding = 2) uniform sampler2D gNormal;
 layout(binding = 3) uniform sampler2D texNoise;
 
-layout(binding = 5) uniform UniformBufferObject {
+layout(std140, binding = 5) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+    vec4 cameraPosition;
+    vec3 albedo;
+    vec4 lightPositions[2];
+    vec4 lightColors[2];
+    float metallic;
+    float roughness;
+    float ao;
     float time;
 }camera;
 
 int kernelSize = 64;
 
-layout(binding = 4) uniform KernelSample {
-	vec3 samples[64];
+layout(std140, binding = 4) uniform KernelSample {
 	mat4 projection;
+    mat4 mvMatrix;
+    vec4 samples[64];
+    vec4 cameraEye;
+    vec4 cameraCenter;
+	float z_far;
+	float radius;
+	float bias;
+	float scale;
+	float sampleDirections;
+	float num_sample_steps;
+	float sampling_step;
+	bool isSSAOOn;
+	float shadowScalar;
+	float shadowContrast;
+	float depthThreshold;
+	int sampleAmount;
+	int sampleTurns;
 }kernelsamples;
 
 
@@ -34,8 +57,8 @@ void main() {
 	float bias = 0.025;
 
 	vec3 fragPos = texture(gPosition, vec2(1.0 - uvCoords.x, uvCoords.y)).xyz;
-	vec3 normal = texture(gNormal, vec2(1.0 - uvCoords.x, uvCoords.y)).rgb;
-	vec3 randomVec = texture(texNoise, vec2(1.0 - uvCoords.x, uvCoords.y) * noiseScale).xyz;
+	vec3 normal = normalize(texture(gNormal, vec2(1.0 - uvCoords.x, uvCoords.y)).rgb);
+	vec3 randomVec = normalize(texture(texNoise, vec2(1.0 - uvCoords.x, uvCoords.y) * noiseScale).xyz);
 
 	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
 	vec3 bitangent = cross(normal, tangent);
@@ -44,7 +67,7 @@ void main() {
 	float occlusion = 0.0;
 	for(int i = 0; i < kernelSize; ++i) {
 
-		vec3 samplePos = TBN * kernelsamples.samples[i]; // from tangent to view-space transform
+		vec3 samplePos = TBN * kernelsamples.samples[i].xyz; // from tangent to view-space transform
 		samplePos = fragPos + samplePos * radius; //add view-space kernel sample to view-space frag pos
 
 		vec4 offset = vec4(samplePos, 1.0);

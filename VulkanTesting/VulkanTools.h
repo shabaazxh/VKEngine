@@ -11,6 +11,7 @@ namespace VE {
 	
 	namespace Tools {
 
+		static bool enableSSAO = true;
 				
 	}
 

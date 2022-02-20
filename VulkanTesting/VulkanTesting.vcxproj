@@ -44,6 +44,7 @@
     <ClCompile Include="vendor\imgui\imgui_tables.cpp" />
     <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="vendor\stb_image.cpp" />
+    <ClCompile Include="VulkanCore.cpp" />
     <ClCompile Include="VulkanDevice.cpp" />
     <ClCompile Include="vulkanengine.cpp" />
     <ClCompile Include="VulkanTools.cpp" />
@@ -70,6 +71,7 @@
     <ClInclude Include="DescriptorSetLayout.h" />
     <ClInclude Include="Framebuffers.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="ImGuiControls.h" />
     <ClInclude Include="ImGuiUI.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Object.h" />
@@ -86,6 +88,7 @@
     <ClInclude Include="vendor\imgui\imstb_rectpack.h" />
     <ClInclude Include="vendor\imgui\imstb_textedit.h" />
     <ClInclude Include="vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="VulkanCore.h" />
     <ClInclude Include="VulkanDevice.h" />
     <ClInclude Include="vulkanengine.h" />
     <ClInclude Include="VulkanTools.h" />
