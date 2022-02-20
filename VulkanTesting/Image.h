@@ -8,6 +8,7 @@
 #include <stb_image.h>
 
 namespace ImageTools {
+
 	struct imageInfo {
 		std::string DiffuseLocation;
 		std::vector<std::string> FileLocations = { DiffuseLocation };
@@ -30,6 +31,14 @@ namespace ImageTools {
 		VkImageView EmissionImageView;
 		VkDeviceMemory EmissionImageMemory;
 	};
+
+
+	struct HDRImage {
+		std::string HDRImageLocations;
+		VkImage HDR_Image;
+		VkImageView HDRImageView;
+		VkDeviceMemory HDRImageMemory;
+	};
 }
 
 class ImageResource {
@@ -38,6 +47,8 @@ public:
 		VkFormat swapChainImageFormat);
 	ImageResource(VkPhysicalDevice physicalDevice);
 	ImageResource() = default;
+
+	void LoadHDRImage(ImageTools::HDRImage& externalSource);
 
 	void createTextureImage(ImageTools::imageInfo& imageInfo);
 

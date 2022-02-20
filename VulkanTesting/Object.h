@@ -4,11 +4,13 @@
 
 #include <stdexcept>
 #include <glm/glm.hpp>
+#include <glm/gtx/hash.hpp>
 #include "vulkan/vulkan.h"
 
 #include <array>
 #include <vector>
 #include <iostream>
+#include <unordered_map>
 
 
 struct Vertex {
@@ -52,13 +54,32 @@ struct Vertex {
 
 		return attributeDescriptions;
 	}
+
+	bool operator==(const Vertex& other) const {
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
 };
+
+namespace std {
+	template<> struct hash<Vertex> {
+		size_t operator()(Vertex const& vertex) const {
+			return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+		}
+	};
+}
 
 struct UniformBufferObject {
 	glm::mat4 model;
 	glm::mat4 view;
 	glm::mat4 proj;
+	alignas(16) glm::vec4 cameraPostion;
+	alignas(16) glm::vec3 albedo;
+	float metallic;
+	float roughness;
+	float ao;
 	float time;
+	glm::vec4 lightPositions[2];
+	glm::vec4 lightColors[2];
 };
 
 struct Light {
@@ -70,16 +91,25 @@ struct Light {
 	alignas(16) bool invertedNormals;
 	alignas(16) float Linear;
 	alignas(16) float Quadratic;
-
 };
 
-	struct KernelSample {
-		alignas(16) glm::vec4 samples[64];
-		alignas(16) glm::mat4 projection;
-	};
+struct KernelSample {
+	alignas(16) glm::vec4 samples[64];
+	alignas(16) glm::mat4 projection;
+	alignas(16) glm::vec4 cameraEye;
+	alignas(16) glm::vec4 cameraCenter;
+	alignas(16) float z_far;
+	alignas(16) glm::mat4 mvMatrix;
+};
 
 class Object {
 public:
+	Object() = default;
+	Object(std::vector<Vertex> v, std::vector<uint32_t> i) {
+		this->vertices = v;
+		this->indices = i;
+	}
+
 	Vertex getInstance() { return instance; }
 	std::vector<Vertex> getVertexData() { return vertices; }
 	std::vector<uint32_t> getIndexData() { return indices; }
@@ -87,7 +117,8 @@ public:
 	std::vector<Vertex> GetQuadVertex() { return QuadVertices; }
 	std::vector<uint32_t> GetQuadIncies() { return QuadIndices; }
 
-	void loadModel(std::string modelPath);
+	void LoadModel(std::string modelPath);
+
 private:
 
 	const std::vector<Vertex> QuadVertices = {
@@ -101,8 +132,8 @@ private:
 		0,1,2,2,3,0
 	};
 
-	Vertex instance;
 
+	Vertex instance;
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 };

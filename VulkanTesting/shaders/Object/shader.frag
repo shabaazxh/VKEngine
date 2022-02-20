@@ -8,6 +8,20 @@ layout(binding = 1) uniform Light {
     mat4 lightSpaceMatrix;
 }LightUBO;
 
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec3 cameraPosition;
+    vec3 albedo;
+    float metallic;
+    float roughness;
+    float ao;
+    float time;
+    vec4 lightPositions[2];
+    vec4 lightColors[2];
+}camera;
+
 
 layout(binding = 2) uniform sampler2D texSampler;
 layout(binding = 3) uniform sampler2D DiffuseTexture;
@@ -25,10 +39,56 @@ layout(location = 5) in vec4 FragPosLightSpace;
 
 layout(location = 0) out vec4 outColor;
 
+const float PI = 3.14159265359;
+
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a*a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float num = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+
+    return num/denom;
+}
+
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float num = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return num / denom;
+}
+
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1  * ggx2;
+}
+
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
     float closestDepth = texture(shadowMap, projCoords.xy).r;
 
@@ -63,31 +123,80 @@ float shadowResult(vec4 fragPosLightSpace)
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 
     // convert the coordinates from [-1, 1] to [0,1] in order to correctly sample from depth map
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
 
-    float closesDepth = texture(shadowMap, vec2(1.0 - projCoords.x, 1.0 - projCoords.y)).r;
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
 
     float currentDepth = projCoords.z;
 
-    float shadow = currentDepth > closesDepth ? 1.0 : 0.0;
+    float bias = 0.005f;
+    float shadow = currentDepth > closestDepth + bias ? 1.0 : 0.0;
 
     return shadow;
 }
 
 void main() {
 
-    float gamma = 2.2;
+    vec3 N = normalize(Normal);
+    vec3 V = normalize(camera.cameraPosition - FragPos.xyz);
+
+    vec3 Lo = vec3(0.0);
+
+    // no need to loop -> if only have one light source
+    for(int i = 0; i < 2; i++) {
+
+        vec3 L = normalize(camera.lightPositions[i].xyz - FragPos.xyz);
+        vec3 H = normalize(V + L);
+
+
+        float distance = length(camera.lightPositions[i].xyz - FragPos.xyz);
+        float attenuation = 1.0 / (distance * distance);
+        vec3 radiance = camera.lightColors[i].xyz * attenuation;
+
+        vec3 F0 = vec3(0.04);
+        F0 = mix(F0, camera.albedo, camera.metallic);
+        vec3 F = fresnelSchlick(max(dot(H,V), 0.0), F0);
+
+        float NDF = DistributionGGX(N, H, camera.roughness);
+        float G = GeometrySmith(N, V, L, camera.roughness);
+
+        vec3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+        vec3 specular = numerator / denominator;
+
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+
+        kD *= 1.0 - camera.metallic;
+
+        // calculate each lights outgoing reflectace value 
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * camera.albedo / PI + specular) * radiance * NdotL;
+    }
+
+    float shadow = shadowResult(FragPosLightSpace);
+    vec3 ambient = vec3(0.03) * camera.albedo * camera.ao;
+    vec3 color = ambient + Lo + (1.0 - shadow);
+
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0/2.2));
+
+
+
+
+/*     float gamma = 2.2;
 
     vec3 color = vec3(1.0, 1.0, 1.0);
     vec3 normal = normalize(Normal);
     vec3 lightColor = vec3(1.0);
 
-    vec3 ambient = 0.3 * color;
+    //vec3 ambient = 0.3 * color;
+    vec3 ambient = 0.3 * texture(DiffuseTexture, fragTexCoord).rgb * color;
     
     //Diffuse
     vec3 lightDir = normalize(LightUBO.position.xyz - FragPos.xyz);
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * LightUBO.lightColor.xyz;
+    vec3 diffuse = diff * texture(DiffuseTexture, fragTexCoord).rgb * LightUBO.lightColor.xyz;
 
     // specular
     vec3 viewDir = normalize(LightUBO.viewPos.xyz - FragPos.xyz);
@@ -95,7 +204,7 @@ void main() {
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);
     spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0);
-    vec3 specular = spec * LightUBO.lightColor.xyz;
+    vec3 specular = spec * texture(specularTexture, fragTexCoord).rgb * LightUBO.lightColor.xyz;
 
     //attenuation
     float max_distance = 1.5;
@@ -111,6 +220,6 @@ void main() {
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
     lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
-
-    outColor = vec4(lighting, 1.0);
+ */
+    outColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

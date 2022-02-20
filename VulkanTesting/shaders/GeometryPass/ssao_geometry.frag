@@ -1,5 +1,7 @@
 #version 450
 
+layout(binding = 3) uniform sampler2D DiffuseTexture;
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -31,6 +33,7 @@ void main() {
 	gPosition = FragPos;
 	gNormal = normalize(Normal);
 	gAlbedo.rgb = vec3(0.95);
+    //gAlbedo.rgb = texture(DiffuseTexture, TexCoords).rgb;
 }
 
 

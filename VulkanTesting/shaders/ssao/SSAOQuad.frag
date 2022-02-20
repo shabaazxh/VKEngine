@@ -11,12 +11,14 @@ layout(binding = 5) uniform UniformBufferObject {
     float time;
 }camera;
 
+int kernelSize = 64;
+
 layout(binding = 4) uniform KernelSample {
 	vec3 samples[64];
 	mat4 projection;
 }kernelsamples;
 
-int kernelSize = 64;
+
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
@@ -24,6 +26,7 @@ layout(location = 1) in vec2 uvCoords;
 layout(location = 0) out float outColor;
 
 const vec2 noiseScale = vec2(1920.0/4.0, 1080.0/4.0);
+
 
 void main() {
 
@@ -41,15 +44,15 @@ void main() {
 	float occlusion = 0.0;
 	for(int i = 0; i < kernelSize; ++i) {
 
-		vec3 samplePos = TBN * kernelsamples.samples[i];
-		samplePos = fragPos + samplePos * radius;
+		vec3 samplePos = TBN * kernelsamples.samples[i]; // from tangent to view-space transform
+		samplePos = fragPos + samplePos * radius; //add view-space kernel sample to view-space frag pos
 
 		vec4 offset = vec4(samplePos, 1.0);
-		offset = camera.proj * offset;
-		offset.xyz /= offset.w;
-		offset.xyz = offset.xyz * 0.5 + 0.5;
+		offset = camera.proj * offset; //transform sample to clip space
+		offset.xyz /= offset.w; // perspective divide
+		offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0-1
 
-		float sampleDepth = texture(gPosition, offset.xy).z;
+		float sampleDepth = texture(gPosition, offset.xy).z; //retrieve the z (depth) value of the current position
 
 		float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
 		occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;

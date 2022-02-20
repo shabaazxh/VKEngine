@@ -30,7 +30,10 @@ layout(location = 2) out vec3 Normal;
 
 void main() {
     vec4 viewPos = ubo.view * ubo.model * vec4(inPosition, 1.0);
+    vec4 worldPos = ubo.model * vec4(inPosition, 1.0);
     FragPos = viewPos.xyz;
+    //FragPos = worldPos.xyz;
+
     TexCoords = inTexCoord;
 
     mat3 normalMatrix = transpose(inverse(mat3(ubo.view * ubo.model)));

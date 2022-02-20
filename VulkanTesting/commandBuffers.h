@@ -7,10 +7,16 @@
 #include "Buffer.h"
 #include "Object.h"
 #include "Buffer.h"
+#include "vendor/imgui/imgui.h"
+#include "vendor/imgui/imgui_impl_vulkan.h"
+#include "vendor/imgui/imgui_impl_glfw.h"
 
 class CommandBuffers {
 public:
-	CommandBuffers(VkDevice device, std::vector<VkFramebuffer> swapChainFramebuffers, 
+	CommandBuffers() = default;
+	CommandBuffers(VkDevice device, 
+		std::vector<VkFramebuffer> swapChainFramebuffers, 
+		VkQueue graphicsQueue,
 		VkCommandPool commandPool, 
 		VkRenderPass SceneRenderPass,
 		VkExtent2D swapChainExtent, 
@@ -18,7 +24,8 @@ public:
 		VkPipeline computePipeline, 
 		VkPhysicalDevice physicalDevice, 
 		VkBuffer renderingBuffer, 
-		VkBuffer indexBuffer,VkPipelineLayout pipelineLayout,
+		VkBuffer indexBuffer,
+		VkPipelineLayout pipelineLayout,
 		std::vector<VkDescriptorSet> descriptorSets, 
 		std::vector<Vertex> sceneVertexInformation,
 		VkPipeline shadowPipeline, 
@@ -54,11 +61,30 @@ public:
 		VkRenderPass SSAOBlurRenderPass,
 		VkPipeline FloorPipeline,
 		VkPipelineLayout FloorPipelineLayout,
-		std::vector<VkDescriptorSet> FloorDescriptorSet);
+		std::vector<VkDescriptorSet> FloorDescriptorSet,
+		VkBuffer positionsVertexBuffer,
+		VkBuffer positionsIndexBuffer,
+		VkFramebuffer positionsFB,
+		VkRenderPass positionsRP,
+		VkPipeline positionsPipeline,
+		VkPipelineLayout positionsPL,
+		std::vector<uint32_t> modelIndex,
+		std::vector<uint32_t> FloorModelIndexData,
+		std::vector<uint32_t> CubeMapIndex,
+		VkBuffer FloorModelIndexBuffer,
+		VkBuffer CubeMapVertexBuffer,
+		VkBuffer CubeMapIndexBuffer,
+		VkPipeline CubeMapPipeline,
+		VkPipelineLayout CubeMapPipelineLayout);
 
 	void createCommandBuffers();
 
 	std::vector<VkCommandBuffer> getCommandBuffers() { return commandBuffers; }
+
+	void UI(VkCommandBuffer commandBuffer);
+
+	VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
+	void endSingleTimeCommnads(VkCommandBuffer commandBuffer, VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue);
 
 private:
 	std::unique_ptr<Object> GameObjectVertices = std::make_unique<Object>();
@@ -69,6 +95,7 @@ private:
 	VkDevice device;
 	VkCommandPool commandPool;
 	VkRenderPass SceneRenderPass;
+	VkQueue graphicsQueue;
 
 	//Shadows
 	VkFramebuffer shadowFramebuffer;
@@ -90,6 +117,8 @@ private:
 
 	std::vector<Vertex> sceneVertexInformation;
 	std::vector<uint32_t> modelIndex;
+	std::vector<uint32_t> FloorModelIndexData;
+	VkBuffer FloorModelIndexBuffer;
 
 	std::vector<Vertex> FloorVertexData;
 	VkBuffer FloorRenderBuffer;
@@ -129,5 +158,21 @@ private:
 	VkPipelineLayout FloorPipelineLayout;
 
 	std::vector<VkDescriptorSet> FloorDescriptorSet;
+
+
+	VkBuffer positionsVertexBuffer;
+	VkBuffer positionsIndexBuffer;
+	VkFramebuffer positionsFB;
+	VkRenderPass positionsRP;
+	VkPipeline positionsPipeline;
+	VkPipelineLayout positionsPL;
+
+	VkBuffer CubeMapVertexBuffer;
+	VkBuffer CubeMapIndexBuffer;
+	VkPipeline CubeMapPipeline;
+	VkPipelineLayout CubeMapPipelineLayout;
+	std::vector<uint32_t> CubeMapIndex;
+
+	VkCommandBuffer commandBufferImGui;
 
 };

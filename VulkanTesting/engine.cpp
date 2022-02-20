@@ -19,6 +19,7 @@
 #include <array>
 
 //Class
+#include "Window.h"
 #include "pipeline.h"
 #include "RenderPass.h"
 #include "Framebuffers.h"
@@ -31,7 +32,8 @@
 #include "Descriptors.h"
 #include "Input.h"
 #include "Image.h"
-
+#include "VulkanDevice.h"
+#include "SwapChain.h"
 
 const std::vector<const char*> validationLayers = {
 	 "VK_LAYER_KHRONOS_validation"
@@ -59,12 +61,6 @@ const std::vector<const char*> deviceExtensions = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
-
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
 	std::optional<uint32_t> presentFamily;
@@ -75,29 +71,23 @@ struct QueueFamilyIndices {
 };
 
 
-class vulkanEngine {
+class vulkanEngine2 {
 public:
+	~vulkanEngine2() {
+		delete EngineWindow;
+		EngineWindow = nullptr;
+	}
 	void run() {
-		initWindow();
+		initEngine();
 		initVulkan();
 		mainloop();
 		cleanup();
 	}
 private:
-	GLFWwindow* window;
 
 	VkInstance instance; 
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice logicalDevice;
-
-	VkQueue graphicsQueue;
-	VkQueue presentQueue;
 
 	VkSurfaceKHR surface;
-	VkSwapchainKHR swapChain;
-	std::vector<VkImage> swapChainImages; // <- retrieving the swap chain images
-	VkFormat swapChainImageFormat; // <- store the swap chain format for later use
-	VkExtent2D swapChainExtent; // <- store the swapchain extent for later use
 
 	std::vector<VkImageView> swapChainImagesViews; // <- an ImageView is just a view into the image describes how to access the image and which part of the image to access
 
@@ -122,6 +112,7 @@ private:
 	std::unique_ptr<Buffer> FloorObjectBuffer;
 	std::unique_ptr<Buffer> SSAOQuadBuffer;
 	std::unique_ptr<Buffer> QuadBuffer;
+	std::unique_ptr<Buffer> LightBuffer;
 
 	std::unique_ptr<Object> SecondModel;
 	std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
@@ -130,80 +121,80 @@ private:
 	std::unique_ptr<ImageResource> ImageRes;
 	std::unique_ptr<ImageResource> ImageResHelper;
 
+	VE::Window* EngineWindow = nullptr;
 
-	void initWindow() {
-		std::system("shaders/compile.bat");
+	std::unique_ptr<VE::VulkanDevice> vkDevice;
+	std::unique_ptr<VE::SwapChain> swapChain;
 
-		glfwInit();
+	void initEngine() {
 
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-		window = glfwCreateWindow(2560, 1440, "title", nullptr, nullptr);
+		//std::system("C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/compile.bat");
+		EngineWindow = new VE::Window(2560, 1440, "title");
+		EngineWindow->initWindow();
 
-		GameInput->setCameraSettings(window, glm::vec3(0.5f, .1f, 11.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//GameInput->setCameraSettings(EngineWindow->getWindow(), glm::vec3(0.5f, .1f, 11.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
 	void initVulkan() {
-		createInstance();
+
+		//createInstance();
 		//setupDebugMessenger();
-		createSurface();
-		pickPhysicalDevice();
-		createLogicalDevice();
-		createSwapChain();
-		createImageViews();
-		ImageResHelper = std::make_unique<ImageResource>(physicalDevice);
-		VkFormat shadowDepth = ImageResHelper->findDepthFormat();
-		renderPass = std::make_unique<RenderPass>(logicalDevice, swapChainImageFormat);
+		//createSurface();
 
-		renderPass->createSceneRenderPass(shadowDepth);
+		vkDevice = std::make_unique<VE::VulkanDevice>(instance, surface);
+		vkDevice->createDevice();
 		
+		swapChain = std::make_unique<VE::SwapChain>(instance,vkDevice->getDevice(),vkDevice->getPhysicalDevice(), surface, EngineWindow->getWindow());
+		swapChain->createSwapChain();
+
+		ImageResource DepthFormat(vkDevice->getPhysicalDevice());
+		VkFormat shadowDepth = DepthFormat.findDepthFormat();
+
+		renderPass = std::make_unique<RenderPass>(vkDevice->getDevice(), swapChain->getSwapChainImageFormat());
+		renderPass->createSceneRenderPass(shadowDepth);
 		renderPass->createShadowRenderPass(shadowDepth);
-
 		renderPass->createQuadRenderPass();
 		renderPass->createQuadRenderPass();
-
 		renderPass->createGeometryPassRenderPass(shadowDepth);
-
 		renderPass->createSSAORenderPass();
-
 		renderPass->createSSAOBlurRenderPass();
 
-		descriptorSetLayout = std::make_unique<DescriptorSetLayout>(logicalDevice);
+		descriptorSetLayout = std::make_unique<DescriptorSetLayout>(vkDevice->getDevice());
 		descriptorSetLayout->createDescriptorSetLayout();
 		descriptorSetLayout->createQuadDescriptorSetLayout();
 		descriptorSetLayout->createSSAODescriptorSetLayout();
 		descriptorSetLayout->createSSAOBlurDescriptorSetLayout();
 
-		GeometryPassPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetGeometryPassRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
+		GeometryPassPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetGeometryPassRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 		GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
-		SSAOQuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAORenderPass(), swapChainExtent, descriptorSetLayout->GetSSAODescriptorSetLayout());
+		SSAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
 		SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAOQuad.frag.spv");
 
-		SSAOBlurPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSSAOBlurRenderPass(), swapChainExtent, descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
+		SSAOBlurPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
 		SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv","shaders/ssao/SSAOBlur.frag.spv");
 
-		QuadPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetQuadRenderPass(), swapChainExtent, descriptorSetLayout->GetQuadDescriptorSetLayout());
+		QuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetQuadRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetQuadDescriptorSetLayout());
 		QuadPipeline->createGraphicsPipelineOverlay("shaders/quad.vert.spv","shaders/quad.frag.spv");
 
-		shadowPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetShadowRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
+		shadowPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetShadowRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 		shadowPipeline->createGraphicsPipelineSingleShader("shaders/shadow/shadow.vert.spv");
 
-		pipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
+		pipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 		pipeline->createGraphicsPipeline("shaders/Object/vert.spv", "shaders/Object/frag.spv");
 
-		FloorPipeline = std::make_unique<Pipeline>(logicalDevice, renderPass->GetSceneRenderPass(), swapChainExtent, descriptorSetLayout->getDescriptorSetLayout());
+		FloorPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->getDescriptorSetLayout());
 		FloorPipeline->createGraphicsPipeline("shaders/Object/textureShader.vert.spv", "shaders/Object/textureShader.frag.spv");
 
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-		commandPool = std::make_unique<CommandPool>(logicalDevice, physicalDevice, surface, indices.graphicsFamily);
-		commandPool->createCommandPool(indices.graphicsFamily.value());
+		VE::QueueFamilyIndices indices = vkDevice->findQueueFamilies(vkDevice->getPhysicalDevice());
+		commandPool = std::make_unique<CommandPool>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), surface, indices.graphics);
+		commandPool->createCommandPool(indices.graphics.value());
 
-		ImageRes = std::make_unique<ImageResource>(logicalDevice, commandPool->getCommandPool(), graphicsQueue, physicalDevice, swapChainImageFormat);
-		ImageRes->createImageResources(swapChainExtent);
+		ImageRes = std::make_unique<ImageResource>(vkDevice->getDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), vkDevice->getPhysicalDevice(), swapChain->getSwapChainImageFormat());
+		ImageRes->createImageResources(swapChain->getSwapChainExtent());
 
 		/** ------------------------ FRAME BUFFERS ------------------------- */
-		frameBuffers = std::make_unique<Framebuffers>(logicalDevice, swapChainImagesViews, renderPass->GetSceneRenderPass(), swapChainExtent);
+		frameBuffers = std::make_unique<Framebuffers>(vkDevice->getDevice(), swapChain->getSwapChainImageViews(), renderPass->GetSceneRenderPass(), swapChain->getSwapChainExtent());
 
 		frameBuffers->createSwapChainFramebuffers(renderPass->GetQuadRenderPass(), ImageRes->getDepthImageView());
 
@@ -241,34 +232,37 @@ private:
 		
 		Object objectData;
 		SecondModel = std::make_unique <Object>();
-		buffers = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
+		buffers = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 	
 		objectData.loadModel("Models/f1carwithcubes.obj"); //f1_onthefloor f1carwithcubes
 		SecondModel->loadModel("Models/floor.obj");
 
+		LightBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
+		LightBuffer->createUniformBuffer(sizeof(Light));
+
 		buffers->createVertexBuffer(sizeof(objectData.getVertexData()[0]) * objectData.getVertexData().size(), objectData.getVertexData());
 		buffers->createIndexBuffer(sizeof(objectData.getIndexData()[0]) * objectData.getIndexData().size(), objectData.getIndexData());
-		buffers->createUniformBuffer();
+		buffers->createUniformBuffer(sizeof(UniformBufferObject));
 
-		FloorObjectBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
+		FloorObjectBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 		FloorObjectBuffer->createVertexBuffer(sizeof(SecondModel->getVertexData()[0]) * SecondModel->getVertexData().size(), SecondModel->getVertexData());
-		FloorObjectBuffer->createUniformBuffer();
+		FloorObjectBuffer->createUniformBuffer(sizeof(UniformBufferObject));
 
-		QuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
+		QuadBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 		QuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
 		QuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
 
-		SSAOQuadBuffer = std::make_unique<Buffer>(logicalDevice, physicalDevice, commandPool->getCommandPool(), graphicsQueue, swapChainImages, swapChainExtent, CameraMovement);
+		SSAOQuadBuffer = std::make_unique<Buffer>(vkDevice->getDevice(), vkDevice->getPhysicalDevice(), commandPool->getCommandPool(), vkDevice->getGraphicsQueue(), swapChain->getSwapChainImages(), swapChain->getSwapChainExtent());
 		SSAOQuadBuffer->createVertexBuffer(sizeof(objectData.GetQuadVertex()[0]) * objectData.GetQuadVertex().size(), objectData.GetQuadVertex());
 		SSAOQuadBuffer->createIndexBuffer(sizeof(objectData.GetQuadIncies()[0]) * objectData.GetQuadIncies().size(), objectData.GetQuadIncies());
-		SSAOQuadBuffer->createUniformBuffer();
+		SSAOQuadBuffer->createUniformBuffer(sizeof(KernelSample));
 
 		descriptors = std::make_unique<Descriptors>(
-			logicalDevice,
-			swapChainImages,
+			vkDevice->getDevice(),
+			swapChain->getSwapChainImages(),
 			buffers->getUniformBuffers(),
-			buffers->getLightBuffers(),
-			SSAOQuadBuffer->GetSSAOUniformBuffer(),
+			LightBuffer->getUniformBuffers(),
+			SSAOQuadBuffer->getUniformBuffers(),
 			descriptorSetLayout->getDescriptorSetLayout(),
 			descriptorSetLayout->GetQuadDescriptorSetLayout(),
 			descriptorSetLayout->GetSSAODescriptorSetLayout(),
@@ -291,7 +285,6 @@ private:
 			F1Image.textureImageView,
 			F1Image.specularImageView,
 			FloorObjectBuffer->getUniformBuffers(),
-			FloorObjectBuffer->getLightBuffers(),
 			FloorImageInfo.textureImageView,
 			FloorImageInfo.specularImageView,
 			F1Image.AOImageView,
@@ -301,14 +294,14 @@ private:
 		descriptors->createDescriptorSets();
 
 		commandBuffers = std::make_unique<CommandBuffers>(
-			logicalDevice,
+			vkDevice->getDevice(),
 			frameBuffers->getSwapChainFramebuffers(),
 			commandPool->getCommandPool(),
 			renderPass->GetSceneRenderPass(),
-			swapChainExtent,
+			swapChain->getSwapChainExtent(),
 			pipeline->getGraphicsPipeline(),
 			pipeline->getComputePipeline(),
-			physicalDevice,
+			vkDevice->getPhysicalDevice(),
 			buffers->getVertexBuffer(),
 			buffers->getIndexBuffer(),
 			pipeline->getPipelineLayout(),
@@ -352,91 +345,93 @@ private:
 		commandBuffers->createCommandBuffers();
 
 		renderer = std::make_unique<Renderer>(
-			logicalDevice, swapChain, 
+			vkDevice->getDevice(), 
+			swapChain->getSwapChain(),
 			commandBuffers->getCommandBuffers(), 
-			graphicsQueue, 
-			presentQueue, 
-			swapChainImages, 
-			swapChainExtent,
-			physicalDevice,
+			vkDevice->getGraphicsQueue(),
+			vkDevice->getPresentQueue(),
+			swapChain->getSwapChainImages(),
+			swapChain->getSwapChainExtent(),
+			vkDevice->getPhysicalDevice(),
 			commandPool->getCommandPool(), 
 			buffers->getUniformBuffersMemory(), 
-			buffers->getLightBuffersMemory(), 
-			SSAOQuadBuffer->GetSSAOUniformBufferMemory(),
+			LightBuffer->getUniformBuffersMemory(), 
+			SSAOQuadBuffer->getUniformBuffersMemory(),
 			CameraMovement);
 		renderer->createSyncObjects();
 
 	}
 	void mainloop() {
-		while (!glfwWindowShouldClose(window)) {
-			renderer->processInput(window);
+		while (!glfwWindowShouldClose(EngineWindow->getWindow())) {
+			renderer->processInput(EngineWindow->getWindow());
 			renderer->drawFrame();
 			glfwPollEvents();
 		}
-		vkDeviceWaitIdle(logicalDevice);
+		vkDeviceWaitIdle(vkDevice->getDevice());
 	}
 	void cleanupSwapChain() {
 
 		// Framebuffers
 		for (auto framebuffer : frameBuffers->getSwapChainFramebuffers()) {
-			vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+			vkDestroyFramebuffer(vkDevice->getDevice(), framebuffer, nullptr);
 		}
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetDisplaySceneFramebuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->getShadowFramebuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetGeometryPassFrameBuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSceneFrameBuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOFramebuffer(), nullptr);
-		vkDestroyFramebuffer(logicalDevice, frameBuffers->GetSSAOBlurFramebuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->GetDisplaySceneFramebuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->getShadowFramebuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->GetGeometryPassFrameBuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->GetSceneFrameBuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->GetSSAOFramebuffer(), nullptr);
+		vkDestroyFramebuffer(vkDevice->getDevice(), frameBuffers->GetSSAOBlurFramebuffer(), nullptr);
 
 		//Free command buffers 
-		vkFreeCommandBuffers(logicalDevice, commandPool->getCommandPool(), static_cast<uint32_t>(commandBuffers->getCommandBuffers
+		vkFreeCommandBuffers(vkDevice->getDevice(), commandPool->getCommandPool(), static_cast<uint32_t>(commandBuffers->getCommandBuffers
 			().size()), commandBuffers->getCommandBuffers().data());
 
 		// Pipeline
-		vkDestroyPipeline(logicalDevice, pipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, shadowPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, FloorPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, QuadPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, GeometryPassPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, SSAOBlurPipeline->getGraphicsPipeline(), nullptr);
-		vkDestroyPipeline(logicalDevice, SSAOQuadPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), pipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), shadowPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), FloorPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), QuadPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), GeometryPassPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), SSAOBlurPipeline->getGraphicsPipeline(), nullptr);
+		vkDestroyPipeline(vkDevice->getDevice(), SSAOQuadPipeline->getGraphicsPipeline(), nullptr);
 
 
 		// Pipeline Layout
-		vkDestroyPipelineLayout(logicalDevice, shadowPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, pipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, FloorPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, QuadPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, GeometryPassPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, SSAOBlurPipeline->getPipelineLayout(), nullptr);
-		vkDestroyPipelineLayout(logicalDevice, SSAOQuadPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), shadowPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), pipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), FloorPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), QuadPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), GeometryPassPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), SSAOBlurPipeline->getPipelineLayout(), nullptr);
+		vkDestroyPipelineLayout(vkDevice->getDevice(), SSAOQuadPipeline->getPipelineLayout(), nullptr);
 
 		// Render pass
-		vkDestroyRenderPass(logicalDevice, renderPass->GetSceneRenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetShadowRenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetGeometryPassRenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetQuadRenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAORenderPass(), nullptr);
-		vkDestroyRenderPass(logicalDevice, renderPass->GetSSAOBlurRenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSceneRenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetShadowRenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetGeometryPassRenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetQuadRenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), nullptr);
+		vkDestroyRenderPass(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), nullptr);
 
 		//Destroy swapchain image views
 		for (auto imageView : swapChainImagesViews) {
-			vkDestroyImageView(logicalDevice, imageView, nullptr);
+			vkDestroyImageView(vkDevice->getDevice(), imageView, nullptr);
 		}
 
 		//Destroy the swapchain
-		vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+		vkDestroySwapchainKHR(vkDevice->getDevice(), swapChain->getSwapChain(), nullptr);
 
 		//Destroy uniform buffers 
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			vkDestroyBuffer(logicalDevice, buffers->getUniformBuffers()[i], nullptr);
-			vkFreeMemory(logicalDevice, buffers->getUniformBuffersMemory()[i], nullptr);
+		for (size_t i = 0; i < swapChain->getSwapChainImages().size(); i++) {
+			vkDestroyBuffer(vkDevice->getDevice(), buffers->getUniformBuffers()[i], nullptr);
+			vkFreeMemory(vkDevice->getDevice(), buffers->getUniformBuffersMemory()[i], nullptr);
 		}
 
-		vkDestroyDescriptorPool(logicalDevice, descriptors->getDescriptorPool(), nullptr);
+		vkDestroyDescriptorPool(vkDevice->getDevice(), descriptors->getDescriptorPool(), nullptr);
 	}
 
 	void cleanup() {
+
 		if (enableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 		}
@@ -444,456 +439,93 @@ private:
 		cleanupSwapChain();
 
 		//Texture resources destroy
-		vkDestroySampler(logicalDevice, ImageRes->getSampler(), nullptr);
-		vkDestroySampler(logicalDevice, ImageRes->GetSceneSampler(), nullptr);
-		vkDestroySampler(logicalDevice, ImageRes->GetRepeatSampler(), nullptr);
+		vkDestroySampler(vkDevice->getDevice(), ImageRes->getSampler(), nullptr);
+		vkDestroySampler(vkDevice->getDevice(), ImageRes->GetSceneSampler(), nullptr);
+		vkDestroySampler(vkDevice->getDevice(), ImageRes->GetRepeatSampler(), nullptr);
 
 		// Image 
-		vkDestroyImage(logicalDevice, ImageRes->getNormImage(), nullptr);
-		vkDestroyImage(logicalDevice, ImageRes->getTextureImage(), nullptr);
-		vkDestroyImage(logicalDevice, ImageRes->getDepthImage(), nullptr);
-		vkDestroyImage(logicalDevice, ImageRes->GetSceneImage(), nullptr);
-		vkDestroyImage(logicalDevice, ImageRes->getShadowImage(), nullptr);
+		vkDestroyImage(vkDevice->getDevice(), ImageRes->getNormImage(), nullptr);
+		vkDestroyImage(vkDevice->getDevice(), ImageRes->getTextureImage(), nullptr);
+		vkDestroyImage(vkDevice->getDevice(), ImageRes->getDepthImage(), nullptr);
+		vkDestroyImage(vkDevice->getDevice(), ImageRes->GetSceneImage(), nullptr);
+		vkDestroyImage(vkDevice->getDevice(), ImageRes->getShadowImage(), nullptr);
 
 		// Image view
-		vkDestroyImageView(logicalDevice, ImageRes->getTextureImageView(), nullptr);
-		vkDestroyImageView(logicalDevice, ImageRes->getNormImageView(), nullptr);
-		vkDestroyImageView(logicalDevice, ImageRes->getshadowImageView(), nullptr);
+		vkDestroyImageView(vkDevice->getDevice(), ImageRes->getTextureImageView(), nullptr);
+		vkDestroyImageView(vkDevice->getDevice(), ImageRes->getNormImageView(), nullptr);
+		vkDestroyImageView(vkDevice->getDevice(), ImageRes->getshadowImageView(), nullptr);
 
 		// Image memory
-		vkFreeMemory(logicalDevice, ImageRes->getTextureImageMemory(), nullptr);
-		vkFreeMemory(logicalDevice, ImageRes->getDethMemory(), nullptr);
-		vkFreeMemory(logicalDevice, ImageRes->GetSceneImageMemory(), nullptr);
-		vkFreeMemory(logicalDevice, ImageRes->getShadowMemory(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), ImageRes->getTextureImageMemory(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), ImageRes->getDethMemory(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), ImageRes->GetSceneImageMemory(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), ImageRes->getShadowMemory(), nullptr);
 
-		vkDestroyBuffer(logicalDevice, buffers->getIndexBuffer(), nullptr);
-		vkFreeMemory(logicalDevice, buffers->getIndexBufferMemory(), nullptr);
+		vkDestroyBuffer(vkDevice->getDevice(), buffers->getIndexBuffer(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), buffers->getIndexBufferMemory(), nullptr);
 
 		// Buffer
-		vkDestroyBuffer(logicalDevice, buffers->getVertexBuffer(), nullptr);
-		vkFreeMemory(logicalDevice, buffers->getVertexBufferMemory(), nullptr);
+		vkDestroyBuffer(vkDevice->getDevice(), buffers->getVertexBuffer(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), buffers->getVertexBufferMemory(), nullptr);
 
 		// Quad buffer
-		vkDestroyBuffer(logicalDevice, QuadBuffer->getVertexBuffer(), nullptr);
-		vkFreeMemory(logicalDevice, QuadBuffer->getVertexBufferMemory(), nullptr);
-		vkDestroyBuffer(logicalDevice, QuadBuffer->getIndexBuffer(), nullptr);
-		vkFreeMemory(logicalDevice, QuadBuffer->getIndexBufferMemory(), nullptr);
+		vkDestroyBuffer(vkDevice->getDevice(), QuadBuffer->getVertexBuffer(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), QuadBuffer->getVertexBufferMemory(), nullptr);
+		vkDestroyBuffer(vkDevice->getDevice(), QuadBuffer->getIndexBuffer(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), QuadBuffer->getIndexBufferMemory(), nullptr);
 
-		vkDestroyBuffer(logicalDevice, FloorObjectBuffer->getVertexBuffer(), nullptr);
-		vkFreeMemory(logicalDevice, FloorObjectBuffer->getVertexBufferMemory(), nullptr);
+		vkDestroyBuffer(vkDevice->getDevice(), FloorObjectBuffer->getVertexBuffer(), nullptr);
+		vkFreeMemory(vkDevice->getDevice(), FloorObjectBuffer->getVertexBufferMemory(), nullptr);
 
-		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout->getDescriptorSetLayout(), nullptr);
-		vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout->GetQuadDescriptorSetLayout(), nullptr);
+		vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->getDescriptorSetLayout(), nullptr);
+		vkDestroyDescriptorSetLayout(vkDevice->getDevice(), descriptorSetLayout->GetQuadDescriptorSetLayout(), nullptr);
 
 		for (size_t i = 0; i < renderer->getMaxFrames(); i++) {
-			vkDestroySemaphore(logicalDevice, renderer->getFinishedSemaphore()[i], nullptr);
-			vkDestroySemaphore(logicalDevice, renderer->getAvailableSemaphore()[i], nullptr);
-			vkDestroyFence(logicalDevice, renderer->getFences()[i], nullptr);
+			vkDestroySemaphore(vkDevice->getDevice(), renderer->getFinishedSemaphore()[i], nullptr);
+			vkDestroySemaphore(vkDevice->getDevice(), renderer->getAvailableSemaphore()[i], nullptr);
+			vkDestroyFence(vkDevice->getDevice(), renderer->getFences()[i], nullptr);
 		}
 
-		vkDestroyCommandPool(logicalDevice, commandPool->getCommandPool(), nullptr);
+		vkDestroyCommandPool(vkDevice->getDevice(), commandPool->getCommandPool(), nullptr);
 
 		//Destroy the logical device
-		vkDestroyDevice(logicalDevice, nullptr);
+		vkDestroyDevice(vkDevice->getDevice(), nullptr);
 		//Destroy surface to window
 		vkDestroySurfaceKHR(instance, surface, nullptr);
 		//Destroy Vulkan instance
 		vkDestroyInstance(instance, nullptr);
 
-		glfwDestroyWindow(window);
+		glfwDestroyWindow(EngineWindow->getWindow());
 		glfwTerminate();
+
+		delete EngineWindow;
+		EngineWindow = nullptr;
 
 	}
 
 	void recreateSwapChain() {
-		vkDeviceWaitIdle(logicalDevice);
+
+		vkDeviceWaitIdle(vkDevice->getDevice());
 
 		cleanupSwapChain();
 
-		createSwapChain();
-		createImageViews();
+		swapChain->createSwapChain();
+
 		VkFormat shadowDepth = ImageResHelper->findDepthFormat();
 		renderPass->createSceneRenderPass(shadowDepth);
 		renderPass->createShadowRenderPass(shadowDepth);
 		pipeline->createGraphicsPipeline("shaders/vert.spv", "shaders/frag.spv");
 		shadowPipeline->createGraphicsPipelineSingleShader("shaders/shadow.vert.spv");
 		//depth resources
-		ImageRes->createImageResources(swapChainExtent);
+		ImageRes->createImageResources(swapChain->getSwapChainExtent());
 		frameBuffers->createSwapChainFramebuffers(renderPass->GetQuadRenderPass(),ImageRes->getDepthImageView());
 		frameBuffers->createShadowFramebuffer(renderPass->GetShadowRenderPass(), ImageRes->getshadowImageView());
 
-		buffers->createUniformBuffer();
+		buffers->createUniformBuffer(sizeof(UniformBufferObject));
 		descriptors->createDescriptorPool();
 		descriptors->createDescriptorSets();
 		commandBuffers->createCommandBuffers();
 
-	}
-
-	void createInstance() {
-
-		if (enableValidationLayers && !checkValidationLayerSupport()) {
-			throw std::runtime_error("validation layers requested, but not available!");
-		}
-
-		VkApplicationInfo appInfo{};
-		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "Vulkan Engine";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.pEngineName = "No Engine";
-		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
-
-		VkInstanceCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		createInfo.pApplicationInfo = &appInfo;
-
-		auto extensions = GetRequiredExtensions();
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-		createInfo.ppEnabledExtensionNames = extensions.data();
-
-		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-		if (enableValidationLayers) {
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-
-			/*populateDebugMessengerCreateInfo(debugCreateInfo);
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;*/
-		}
-		else {
-			createInfo.enabledLayerCount = 0;
-			createInfo.pNext = nullptr;
-		}
-
-		if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create vulkan instance!");
-		}
-
-	}
-
-	void createSurface() {
-		if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create window surface!");
-		}
-	}
-
-	void pickPhysicalDevice() {
-		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-
-		if (deviceCount == 0) {
-			throw std::runtime_error("failed to find GPUs with Vulkan support!");
-		}
-		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-		for (const auto& device : devices) {
-			if (isDeviceSuitable(device)) {
-				physicalDevice = device;
-				break;
-			}
-		}
-		if (physicalDevice == VK_NULL_HANDLE) {
-			throw std::runtime_error("failed to find a suitable GPU!");
-		}
-	}
-
-	void createLogicalDevice() {
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-
-		float queuePriority = 1.0f;
-		for (uint32_t queueFamily : uniqueQueueFamilies) {
-			VkDeviceQueueCreateInfo queueCreateInfo{};
-			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-			queueCreateInfo.queueFamilyIndex = queueFamily;
-			queueCreateInfo.queueCount = 1;
-			queueCreateInfo.pQueuePriorities = &queuePriority;
-			queueCreateInfos.push_back(queueCreateInfo);
-		}
-
-		VkPhysicalDeviceFeatures deviceFeatures{};
-		deviceFeatures.samplerAnisotropy = VK_TRUE;
-
-		/* Creating the logical device */
-		VkDeviceCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-		createInfo.pEnabledFeatures = 0;
-
-		if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create logical device!");
-		}
-
-		vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-		vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-	}
-
-	void createSwapChain() {
-		SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
-
-		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
-
-		//amount of images in the swap chain
-		uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
-
-		//make sure not to exceed the max number of images 
-		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-			imageCount = swapChainSupport.capabilities.maxImageCount;
-		}
-
-		VkSwapchainCreateInfoKHR createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = surface;
-		createInfo.minImageCount = imageCount;
-		createInfo.imageFormat = surfaceFormat.format;
-		createInfo.imageColorSpace = surfaceFormat.colorSpace;
-		createInfo.imageExtent = extent;
-		createInfo.imageArrayLayers = 1; //always one unless it's stereoscopic 3d application
-		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-		//how to handle swap chain images that will be used across multiple families
-
-		QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
-
-		if (indices.graphicsFamily != indices.presentFamily) {
-			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT; //image is owned by one queue family at a time
-			createInfo.queueFamilyIndexCount = 2;
-			createInfo.pQueueFamilyIndices = queueFamilyIndices;
-		}
-		else {
-			createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE; //images can be used across multiple families 
-			createInfo.queueFamilyIndexCount = 0;
-			createInfo.pQueueFamilyIndices = nullptr;
-		}
-
-		createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		createInfo.presentMode = presentMode;
-		createInfo.clipped = VK_TRUE;
-		createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-		if (vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create swap chain!");
-		}
-
-		vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, nullptr);
-		swapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(logicalDevice, swapChain, &imageCount, swapChainImages.data());
-
-		swapChainImageFormat = surfaceFormat.format;
-		swapChainExtent = extent;
-	}
-
-	void createImageViews() {
-		//resize to fit all the image views we will be creating -> make inline with swapchanimages amount
-		swapChainImagesViews.resize(swapChainImages.size());
-
-		for (size_t i = 0; i < swapChainImages.size(); i++) {
-			VkImageViewCreateInfo createInfo{};
-			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = swapChainImages[i];
-			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = swapChainImageFormat;
-			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			createInfo.subresourceRange.baseMipLevel = 0;
-			createInfo.subresourceRange.levelCount = 1;
-			createInfo.subresourceRange.baseArrayLayer = 0;
-			createInfo.subresourceRange.layerCount = 1;
-
-			if (vkCreateImageView(logicalDevice, &createInfo, nullptr, &swapChainImagesViews[i]) != VK_SUCCESS) {
-				throw std::runtime_error("failed to create image views!");
-			}
-		}
-	}
-
-	bool isDeviceSuitable(VkPhysicalDevice device) {
-		QueueFamilyIndices indices = findQueueFamilies(device);
-
-
-		bool extensionSupport = checkDeviceExtensionSupport(device);
-
-		bool swapChainAdequate = false;
-		if (extensionSupport) {
-			SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-		}
-
-		VkPhysicalDeviceFeatures supportedFeatures;
-		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
-		return indices.isComplete() && extensionSupport && swapChainAdequate &&
-			supportedFeatures.samplerAnisotropy;
-	}
-
-	bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
-		uint32_t extensionCount;
-		vkEnumerateDeviceExtensionProperties(device, nullptr ,&extensionCount, nullptr);
-
-		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-		for (const auto& extension : availableExtensions) {
-			requiredExtensions.erase(extension.extensionName);
-		}
-
-		return requiredExtensions.empty();
-	}
-
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-		QueueFamilyIndices indices;
-
-		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-		int i = 0;
-		for (const auto& queueFamily : queueFamilies) {
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-				indices.graphicsFamily = i;
-			}
-			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-			if (presentSupport) {
-				indices.presentFamily = i;
-			}
-
-			if (indices.isComplete()) {
-				break;
-			}
-			i++;
-		}
-
-		return indices;
-	}
-
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
-		SwapChainSupportDetails details;
-
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-
-		if (formatCount != 0) {
-			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-
-		if (presentModeCount != 0) {
-			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
-		}
-
-		return details;
-	}
-
-	//Surface format for the swapchain -> getting the right colours
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
-
-		for (const auto& availableFormat : availableFormats) {
-			if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-				return availableFormat;
-			}
-		}
-		return availableFormats[0]; //else just take the first one available 
-	}
-
-	//Swap chain present modes
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-		for (const auto& availablePresentMode : availablePresentModes) {
-			if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-				return availablePresentMode;
-			}
-		}
-		return VK_PRESENT_MODE_FIFO_KHR;
-	}
-
-	//Matching swap chain extent to the resolution of the swap chain images -> same res as window
-	//need to set VkSurfaceCapabilitiesKHR currentExtent member 
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilites) {
-		if (capabilites.currentExtent.width != UINT32_MAX) {
-			return capabilites.currentExtent;
-		}
-		else {
-			int width, height;
-			glfwGetFramebufferSize(window, &width, &height);
-
-			VkExtent2D actualExtent = {
-				static_cast<uint32_t>(width),
-				static_cast<uint32_t>(height)
-			};
-
-			actualExtent.width = std::clamp(actualExtent.width, capabilites.minImageExtent.width, 
-				capabilites.maxImageExtent.width);
-			actualExtent.height = std::clamp(actualExtent.height, capabilites.minImageExtent.height,
-				capabilites.maxImageExtent.height);
-
-			return actualExtent;
-		}
-
-	}
-
-
-	// Validation layers
-	bool checkValidationLayerSupport() {
-		uint32_t layerCount;
-		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-		std::vector<VkLayerProperties> availableLayers(layerCount);
-		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-		for (const char* layerName : validationLayers) {
-			bool layerFound = false;
-
-			for (const auto& layerProperties : availableLayers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
-					layerFound = true;
-					break;
-				}
-			}
-
-			if (!layerFound) {
-				return false;
-			}
-		}
-	
-		return true;
-	}
-
-	// Debug callback -- Get list of required extensions
-	std::vector<const char*> GetRequiredExtensions() {
-		uint32_t glfwExtensionCount = 0;
-
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-		if (enableValidationLayers) {
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
-		return extensions;
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -920,7 +552,7 @@ private:
 		name.objectHandle = (uint64_t)ImageRes->GetNoiseImageView();
 		name.pObjectName = "noiseImageView";
 
-		vkSetDebugUtilsObjectNameEXT(logicalDevice, &name);
+		vkSetDebugUtilsObjectNameEXT(vkDevice->getDevice(), &name);
 	}
 
 	void setupDebugMessenger() {
@@ -942,16 +574,16 @@ private:
 	}
 };
 
-int main() {
-	vulkanEngine engine;
-
-	try {
-		engine.run();
-	}
-	catch (const std::exception& e) {
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
-	return EXIT_SUCCESS;
-}
+//int main() {
+//	vulkanEngine engine;
+//
+//	try {
+//		engine.run();
+//	}
+//	catch (const std::exception& e) {
+//		std::cerr << e.what() << std::endl;
+//		return EXIT_FAILURE;
+//	}
+//	return EXIT_SUCCESS;
+//}
 

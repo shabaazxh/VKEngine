@@ -15,6 +15,52 @@ ImageResource::ImageResource(VkPhysicalDevice physicalDevice) {
 	this->physicalDevice = physicalDevice;
 }
 
+void ImageResource::LoadHDRImage(ImageTools::HDRImage& externalSource)
+{
+		Buffer bufferResource(device, physicalDevice);
+
+		int texWidth, texHeight, nrComponents;
+		void* imagedata = stbi_load_16(externalSource.HDRImageLocations.c_str(), &texWidth, &texHeight, &nrComponents, STBI_rgb_alpha);
+
+		VkDeviceSize imageSize = texWidth * texHeight * 4 * (sizeof(uint16_t));
+
+		if (!imagedata) {
+			throw std::runtime_error("failed to load HDR texture image!");
+		}
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		bufferResource.createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		void* data;
+		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+		memcpy(data, imagedata, static_cast<size_t>(imageSize));
+		vkUnmapMemory(device, stagingBufferMemory);
+
+		stbi_image_free(imagedata);
+
+		createImage(texWidth, texHeight, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, externalSource.HDR_Image, externalSource.HDRImageMemory);
+
+		transitionImageLayout(externalSource.HDR_Image, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		copyBufferToImage(stagingBuffer, externalSource.HDR_Image,
+			static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+
+		transitionImageLayout(externalSource.HDR_Image, VK_FORMAT_R16G16B16A16_UNORM,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		vkDestroyBuffer(device, stagingBuffer, nullptr);
+		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		externalSource.HDRImageView = createImageView(externalSource.HDR_Image, VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
 void ImageResource::createTextureImage(ImageTools::imageInfo& imageInfo)
 {
 	std::unique_ptr<Buffer> bufferResource = std::make_unique<Buffer>(device, physicalDevice);
@@ -204,7 +250,8 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 
 	/** Depth image */
 	createImage(swapChainExtent.width, swapChainExtent.height, format,
-		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | 
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
 
 	depthImageView = createImageView(depthImage, format, VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -233,12 +280,12 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 	GeometryImageView = createImageView(GeometryImage, swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** SSAO Image */
-	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16_SFLOAT,
+	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, //VK_FORMAT_R16G16B16A16_SFLOAT
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, SSAOImage, SSAOImageMemory);
 
-	SSAOImageView = createImageView(SSAOImage, VK_FORMAT_R16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	SSAOImageView = createImageView(SSAOImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	/** SSAO Lighting image */
 	createImage(swapChainExtent.width, swapChainExtent.height, swapChainImageFormat,
@@ -300,6 +347,12 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 		ssaoNoise.push_back(noise);
 	}
 
+	// print the contents of the noise samples
+	//for (int i = 0; i < ssaoNoise.size(); i++)
+	//{
+	//	std::cout << ssaoNoise[i].x << " " << ssaoNoise[i].y << " " << ssaoNoise[i].z << std::endl;
+	//}
+
 	Buffer bufferHelper(device, physicalDevice); //buffer instance to use buffer creation functions
 
 	VkBuffer stagingBuffer;
@@ -326,8 +379,6 @@ void ImageResource::createImageResources(VkExtent2D swapChainExtent) {
 	vkFreeMemory(device, stagingBufferMemory, nullptr);
 
 	noiseImageView = createImageView(noiseImage, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-
-
 	
 }
 
@@ -531,7 +582,7 @@ void ImageResource::createTextureSampler()
 	samplerInfo.magFilter = VK_FILTER_NEAREST;
 	samplerInfo.minFilter = VK_FILTER_NEAREST;
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 	samplerInfo.addressModeV = samplerInfo.addressModeU;
 	samplerInfo.addressModeW = samplerInfo.addressModeU;
 	samplerInfo.mipLodBias = 0.0f;
@@ -539,9 +590,11 @@ void ImageResource::createTextureSampler()
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 1.0f;
 	samplerInfo.anisotropyEnable = VK_FALSE;
-	//samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+	samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
 	samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	
+	//samplerInfo.compareEnable = VK_TRUE;
+	//samplerInfo.compareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+
 	if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create texture sampler!");
 	}

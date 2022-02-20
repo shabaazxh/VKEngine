@@ -19,5 +19,27 @@ C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/V
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.vert.spv
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAOQuad.frag.spv
 
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/Mitring_AO.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/Mitring_AO.vert.spv
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/Mitring_AO.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/Mitring_AO.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/h.vert -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/h.vert.spv
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/h.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/h.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/m.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/m.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAO_Depth.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/SSAO_Depth.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/JP.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/JP.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/positionsOutput.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/positionsOutput.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/VK.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/VK.frag.spv
+
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aao.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aao.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aog.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aog.frag.spv
+
+C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/crytekssao.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/crytekssao.frag.spv
 
 pause

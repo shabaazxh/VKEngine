@@ -24,20 +24,33 @@
     <ClCompile Include="commandPool.cpp" />
     <ClCompile Include="Descriptors.cpp" />
     <ClCompile Include="DescriptorSetLayout.cpp" />
-    <ClCompile Include="engine.cpp" />
     <ClCompile Include="Framebuffers.cpp" />
     <ClCompile Include="Image.cpp" />
+    <ClCompile Include="ImGuiUI.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RenderPass.cpp" />
     <ClCompile Include="shader.cpp" />
+    <ClCompile Include="SwapChain.cpp" />
     <ClCompile Include="tinyobjloader.cpp" />
+    <ClCompile Include="vendor\imgui\imgui.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_tables.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="vendor\stb_image.cpp" />
+    <ClCompile Include="VulkanDevice.cpp" />
+    <ClCompile Include="vulkanengine.cpp" />
+    <ClCompile Include="VulkanTools.cpp" />
+    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="compile.bat" />
+    <None Include="shaders\compile.bat" />
     <None Include="shaders\frag.spv" />
     <None Include="shaders\quad.frag" />
     <None Include="shaders\quad.vert" />
@@ -57,12 +70,26 @@
     <ClInclude Include="DescriptorSetLayout.h" />
     <ClInclude Include="Framebuffers.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="ImGuiUI.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="pipeline.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RenderPass.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="SwapChain.h" />
+    <ClInclude Include="vendor\imgui\imconfig.h" />
+    <ClInclude Include="vendor\imgui\imgui.h" />
+    <ClInclude Include="vendor\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="vendor\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="vendor\imgui\imgui_internal.h" />
+    <ClInclude Include="vendor\imgui\imstb_rectpack.h" />
+    <ClInclude Include="vendor\imgui\imstb_textedit.h" />
+    <ClInclude Include="vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="VulkanDevice.h" />
+    <ClInclude Include="vulkanengine.h" />
+    <ClInclude Include="VulkanTools.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

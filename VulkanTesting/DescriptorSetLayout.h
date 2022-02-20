@@ -29,7 +29,7 @@ private:
 	VkDescriptorSetLayout QuadDescriptorSetLayout;
 	VkDescriptorSetLayout SSAOLayout;
 	VkDescriptorSetLayout SSAOBlurLayout;
-
+	
 	std::vector<VkImage> swapChainImages;
 	VkDevice device;
 };

@@ -9,6 +9,7 @@
 
 class Pipeline {
 	public:
+		Pipeline() = default;
 		Pipeline(VkDevice device, VkRenderPass renderPass,VkExtent2D swapChainExtent, VkDescriptorSetLayout descriptorSetLayout);
 		
 		void createGraphicsPipeline(std::string vertFile, std::string fragFile);
