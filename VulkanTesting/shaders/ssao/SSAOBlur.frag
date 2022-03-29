@@ -1,8 +1,5 @@
 #version 450
 
-layout(binding = 1) uniform sampler2D gPosition;
-layout(binding = 2) uniform sampler2D gNormal;
-layout(binding = 3) uniform sampler2D gAlbedo;
 layout(binding = 4) uniform sampler2D ssao;
 
 layout(binding = 5) uniform Light {
@@ -28,7 +25,7 @@ layout(std140, binding = 4) uniform KernelSample {
     float distScale;
     float attScale;
     bool isSSAOOn;
-}kernelsamples;
+}ssaoparams;
 
 
 layout(location = 0) in vec3 fragColor;
@@ -36,6 +33,7 @@ layout(location = 1) in vec2 uvCoords;
 
 layout(location = 0) out float outColor;
 
+// Blur shader (de Vries, 2020)
 void main() {
 
     vec2 texelSize = 1.0 / vec2(textureSize(ssao, 0));
@@ -52,3 +50,6 @@ void main() {
     outColor = result / (4.0 * 4.0);
     
 }
+
+
+

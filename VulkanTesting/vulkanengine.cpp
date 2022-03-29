@@ -9,8 +9,11 @@ void VE::vulkanEngine::initEngine() {
 
 	std::cout << "Launching Engine " << std::endl;
 
-	EngineWindow = std::make_unique<VE::Window>(1920, 1080, "title");
+	EngineWindow = std::make_unique<VE::Window>(1920, 1080, "Vulkan");
 	EngineWindow->initWindow();
+	VE::Tools::enableSSAO = true;
+	VE::Tools::enableHBAO = false;
+	VE::Tools::enableAlchemyAO = false;
 	//glfwSetFramebufferSizeCallback(EngineWindow->getWindow(), framebufferResizeCallback);
 }
 
@@ -19,7 +22,37 @@ void VE::vulkanEngine::mainloop() {
 
 	while (!glfwWindowShouldClose(EngineWindow->getWindow())) {
 		renderer->processInput(EngineWindow->getWindow());
+
+
 		glfwSetCursorPosCallback(EngineWindow->getWindow(), &MouseController::callback);
+
+		if (glfwGetKey(EngineWindow->getWindow(), GLFW_KEY_1) == GLFW_PRESS) {
+			VE::Tools::enableHBAO = true;
+			if (VE::Tools::enableHBAO)
+			{
+				vkResetCommandPool(vkDevice->getDevice(), commandPool->getCommandPool(), 0);
+				commandBuffers->RecordCommandBuffers(VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+			}
+		}
+
+		if (glfwGetKey(EngineWindow->getWindow(), GLFW_KEY_2) == GLFW_PRESS) {
+			VE::Tools::enableSSAO = true;
+			if (VE::Tools::enableSSAO)
+			{
+				vkResetCommandPool(vkDevice->getDevice(), commandPool->getCommandPool(), 0);
+				commandBuffers->RecordCommandBuffers(VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+			}
+		}
+
+		if (glfwGetKey(EngineWindow->getWindow(), GLFW_KEY_3) == GLFW_PRESS) {
+			VE::Tools::enableAlchemyAO = true;
+			if (VE::Tools::enableAlchemyAO)
+			{
+				vkResetCommandPool(vkDevice->getDevice(), commandPool->getCommandPool(), 0);
+				commandBuffers->RecordCommandBuffers(VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+			}
+		}
+		
 		renderer->drawFrame();
 		glfwPollEvents();
 	}
@@ -80,7 +113,13 @@ void VE::vulkanEngine::Rendering() {
 	GeometryPassPipeline->createGeometryPassGraphicsPipeline("shaders/GeometryPass/ssao_geometry.vert.spv", "shaders/GeometryPass/ssao_geometry.frag.spv");
 
 	SSAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
-	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/another.frag.spv");
+	SSAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/SSAO_Depth.frag.spv");
+
+	HBAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
+	HBAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/another.frag.spv");
+
+	AlchemyAOQuadPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAORenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAODescriptorSetLayout());
+	AlchemyAOQuadPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOQuad.vert.spv", "shaders/ssao/aaao.frag.spv");
 
 	SSAOBlurPipeline = std::make_unique<Pipeline>(vkDevice->getDevice(), renderPass->GetSSAOBlurRenderPass(), swapChain->getSwapChainExtent(), descriptorSetLayout->GetSSAOBlurDescriptorSetLayout());
 	SSAOBlurPipeline->createGraphicsPipelineOverlay("shaders/ssao/SSAOBlur.vert.spv", "shaders/ssao/SSAOBlur.frag.spv");
@@ -131,7 +170,7 @@ void VE::vulkanEngine::Rendering() {
 	ImageTools::imageInfo F1Image{};
 	F1Image.DiffuseLocation = "Textures/white.png";
 	F1Image.specularLocation = "Textures/white.png";
-	F1Image.AOLocation = "Textures/white.png";
+	F1Image.AOLocation = "Textures/ao.png";
 	F1Image.EmissionLocation = "Textures/white.png";
 	ImageRes->createTextureImage(F1Image);
 
@@ -154,7 +193,7 @@ void VE::vulkanEngine::Rendering() {
 	positionsQuad.createVertexBuffer(sizeof(QuadData.Model.GetQuadVertex()[0])* QuadData.Model.GetQuadVertex().size(), QuadData.Model.GetQuadVertex());
 	positionsQuad.createIndexBuffer(sizeof(QuadData.Model.GetQuadIncies()[0])* QuadData.Model.GetQuadIncies().size(), QuadData.Model.GetQuadIncies());
 
-	F1Car.Model.LoadModel("Models/Winter.obj"); //f1_onthefloor f1carwithcubes
+	F1Car.Model.LoadModel("Models/SponzaScene.obj"); //f1_onthefloor f1carwithcubes
 	Floor.Model.LoadModel("Models/floor.obj");
 	CubeMap.Model.LoadModel("Models/CubeMap.obj");
 
@@ -244,7 +283,10 @@ void VE::vulkanEngine::Rendering() {
 		vkDevice->getPresentQueue()
 		);
 
-	imgui->ImGuiInit();
+	imgui->ImGuiInit(vkDevice);
+
+	VE::Tools::GameObjectRenderData HBAORenderData{ HBAOQuadPipeline->getGraphicsPipeline() };
+	VE::Tools::GameObjectRenderData AlchemyRenderData{ AlchemyAOQuadPipeline->getGraphicsPipeline() };
 
 	commandBuffers = std::make_unique<CommandBuffers>(
 		vkDevice->getDevice(),
@@ -308,9 +350,12 @@ void VE::vulkanEngine::Rendering() {
 		CubeMapBuffer->getVertexBuffer(),
 		CubeMapBuffer->getIndexBuffer(),
 		CubeMapPipeline->getGraphicsPipeline(),
-		CubeMapPipeline->getPipelineLayout());
+		CubeMapPipeline->getPipelineLayout(),
+		HBAORenderData,
+		AlchemyRenderData);
 
 	commandBuffers->createCommandBuffers();
+	commandBuffers->RecordCommandBuffers(VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
 
 	
 	frame::frameData frameInformation{};
@@ -332,13 +377,14 @@ void VE::vulkanEngine::Rendering() {
 		Light_2_Buffer->getUniformBuffersMemory(),
 		SSAOQuadBuffer->getUniformBuffersMemory(),
 		frameInformation,
-		framebufferResized);
+		framebufferResized,
+		false,
+		std::move(commandBuffers));
 
 	
 	renderer->createSyncObjects();
 
 	MouseController::MouseControl = &renderer->GetCamera();
-
 }
 
 void VE::vulkanEngine::recreateSwapChain()

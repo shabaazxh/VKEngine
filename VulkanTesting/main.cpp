@@ -4,7 +4,13 @@
 
 int main() {
 
-	VE::vulkanEngine engine(true);
+#ifdef  NDEBUG
+	const bool enableValidationLayer = false;
+#else
+	const bool enableValidationLayer = true;
+#endif //  NDEBUG
+
+	VE::vulkanEngine engine(enableValidationLayer);
 
 	try {
 		engine.run();

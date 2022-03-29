@@ -12,6 +12,7 @@
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_vulkan.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
+#include "commandBuffers.h"
 
 namespace frame {
 	struct frameData {
@@ -33,16 +34,19 @@ public:
 		float radius = 1.0f;
 		float tangent_bias = 0.3f;
 		float scale;
-		float sampleDirections;
-		float num_sample_steps;
-		float sampling_step;
+		float sampleDirections = 8.0f;
+		float num_sample_steps = 6.0f;
+		float sampling_step = 0.04f;
 		float shadowScalar = 1.0f;
 		float shadowContrast = 0.5f;
 		float depthThreshold = 0.000f;
-		int sampleAmount = 200;
+		int sampleAmount = 16;
 		int sampleTurns = 15;
-		float ambientLightLevel;
+		float ambientLightLevel = 1.0f;
 		glm::vec4 lightPosition = glm::vec4(-2.0f, 4.0f, 0.0f, 1.0f);
+		bool enableHBAO;
+		bool enableCrytekSSAO;
+		bool enableAlchemyAO;
 	};
 
 	SSAOTools SSAOController{};
@@ -60,7 +64,9 @@ public:
 		std::vector<VkDeviceMemory> Light_2_BufferMemory,
 		std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory,
 		frame::frameData frameInfo,
-		bool frameBufferResized);
+		bool frameBufferResized,
+		bool LockMouse,
+		std::unique_ptr<CommandBuffers> commands);
 
 	void createSyncObjects();
 	void drawFrame();
@@ -126,5 +132,7 @@ private:
 	frame::frameData frameInfo;
 
 	float radius;
+
+	std::unique_ptr<CommandBuffers> cb;
 
 };

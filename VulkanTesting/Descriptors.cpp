@@ -231,6 +231,11 @@ void Descriptors::createDescriptorSets() {
 		EmissionTextureInfo.imageView = EmissionTextureView;
 		EmissionTextureInfo.sampler = RepeatSampler;
 
+		VkDescriptorBufferInfo KernelBufferInfo{};
+		KernelBufferInfo.buffer = kernelBuffers[i];
+		KernelBufferInfo.offset = 0;
+		KernelBufferInfo.range = sizeof(KernelSample);
+
 		VkDescriptorImageInfo HDRImageInfo{};
 		HDRImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		HDRImageInfo.imageView = HDRImageView;
@@ -318,12 +323,21 @@ void Descriptors::createDescriptorSets() {
 		Light_2_DescriptorWrite.descriptorCount = 1;
 		Light_2_DescriptorWrite.pBufferInfo = &Light_2_BufferInfo;
 
-		std::array<VkWriteDescriptorSet, 9> writeDescriptorSet = { descriptorWrite, LightDescriptorWrite, 
+		VkWriteDescriptorSet KernelDescriptorWrite{};
+		KernelDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		KernelDescriptorWrite.dstSet = descriptorSets[i];
+		KernelDescriptorWrite.dstBinding = 14;
+		KernelDescriptorWrite.dstArrayElement = 0;
+		KernelDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		KernelDescriptorWrite.descriptorCount = 1;
+		KernelDescriptorWrite.pBufferInfo = &KernelBufferInfo;
+
+		std::array<VkWriteDescriptorSet, 10> writeDescriptorSet = { descriptorWrite, LightDescriptorWrite, 
 			DiffuseTextureDescriptorWrite, NormalsTextureDescriptorWrite, 
 			AOTextureDescriptorWrite, EmissionTexutreImageWrite, depthMapDescriptorWrite, HDRImageDescriptorWrite,
-		Light_2_DescriptorWrite};
+		Light_2_DescriptorWrite, KernelDescriptorWrite};
 
-		vkUpdateDescriptorSets(device, 9, writeDescriptorSet.data(), 0, nullptr);
+		vkUpdateDescriptorSets(device, 10, writeDescriptorSet.data(), 0, nullptr);
 	}
 
 	// Floor descriptors 
@@ -415,7 +429,7 @@ void Descriptors::createDescriptorSets() {
 
 		VkWriteDescriptorSet EmissionTexutreImageWrite{};
 		EmissionTexutreImageWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		EmissionTexutreImageWrite.dstSet = descriptorSets[i];
+		EmissionTexutreImageWrite.dstSet = FloorDescriptorSet[i];
 		EmissionTexutreImageWrite.dstBinding = 11;
 		EmissionTexutreImageWrite.dstArrayElement = 0;
 		EmissionTexutreImageWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

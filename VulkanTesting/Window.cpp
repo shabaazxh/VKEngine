@@ -8,7 +8,8 @@ void VE::Window::initWindow()
 	
 	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 

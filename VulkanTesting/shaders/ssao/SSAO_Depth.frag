@@ -22,25 +22,28 @@ layout(std140, binding = 5) uniform UniformBufferObject {
 
 
 layout(std140, binding = 4) uniform KernelSample {
-	mat4 projection;
+    mat4 projection;
     mat4 mvMatrix;
     vec4 samples[64];
     vec4 cameraEye;
     vec4 cameraCenter;
-	float z_far;
-	float radius;
-	float bias;
-	float scale;
-	float sampleDirections;
-	float num_sample_steps;
-	float sampling_step;
-	bool isSSAOOn;
-	float shadowScalar;
-	float shadowContrast;
-	float depthThreshold;
-	int sampleAmount;
-	int sampleTurns;
-}kernelsamples;
+    float z_far;
+    float radius;
+    float bias;
+    float scale;
+    float sampleDirections;
+    float num_sample_steps;
+    float sampling_step;
+    bool crytekSSAO;
+    float shadowScalar;
+    float shadowContrast;
+    float depthThreshold;
+    int sampleAmount;
+    int sampleTurns;
+    float ambientLightLevel;
+    bool HBAO;
+    bool AlchemyAO;
+}ssaoparams;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
@@ -80,26 +83,23 @@ vec4 depthToNormals(vec2 tc)
 
 void main() {
 
-	float radius = kernelsamples.radius;
-	float bias = 0.025; //removing banding
-
-	vec3 positions = texture(positionsTexture, vec2(1.0 - uvCoords.x, uvCoords.y)).xyz;
-	vec3 normal = texture(gNormal, vec2(1.0 - uvCoords.x, uvCoords.y)).rgb;
-	vec3 randomVec = texture(texNoise, vec2(1.0 - uvCoords.x, uvCoords.y) * noiseScale).xyz;
+	float radius = ssaoparams.radius;
+	float bias = 0.025; //bias to remove banding
 
 	vec3 viewSpacePositions = depthToPositions(vec2(1.0 - uvCoords.x, uvCoords.y));
+	vec4 viewSpaceNormals = depthToNormals(vec2(1.0 - uvCoords.x, uvCoords.y));
+	vec3 randomVec = texture(texNoise, vec2(1.0 - uvCoords.x, uvCoords.y) * noiseScale).xyz;
 
-	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
-	vec3 bitangent = cross(normal, tangent);
-	mat3 TBN = mat3(tangent, bitangent, normal);
+	vec3 tangent = normalize(randomVec - viewSpaceNormals.xyz * dot(randomVec, viewSpaceNormals.xyz));
+	vec3 bitangent = cross(viewSpaceNormals.xyz, tangent);
+	mat3 TBN = mat3(tangent, bitangent, viewSpaceNormals.xyz);
 
 	vec3 plane = texture(texNoise, vec2(1.0 - uvCoords.x, uvCoords.y) * noiseScale).xyz - vec3(1.0);
 
 	float occlusion = 0.0;
-	for(int i = 0; i < kernelsamples.sampleAmount; ++i) {
-		//vec3 samplePos = reflect(kernelsamples.samples[i].xyz, plane);
+	for(int i = 0; i < ssaoparams.sampleAmount; ++i) {
 
-		vec3 samplePos = TBN * kernelsamples.samples[i].xyz;// from tangent to view-space transform
+		vec3 samplePos = reflect(TBN * ssaoparams.samples[i].xyz, plane);
 		samplePos = viewSpacePositions + samplePos * radius; //add view-space kernel sample to view-space frag pos
 
 		vec4 offset = vec4(samplePos, 1.0);
@@ -110,12 +110,11 @@ void main() {
 		//retrieve the z (depth) value of the offset position
 		float sampleDepth = texture(positionsTexture, offset.xy).z;
 
-		//float rangeCheck = smoothstep(0.0, 1.0, radius / abs(positions.z - sampleDepth));
-		float rangeCheck = abs(viewSpacePositions.z - sampleDepth) < radius ? 1.0 : 0.0;
-		occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0);
+		float rangeCheck = (viewSpacePositions.z - sampleDepth) < ssaoparams.radius? 1.0 : 0.0;
+		occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;
 	}
 
-	occlusion = 1.0 - (occlusion / kernelsamples.sampleAmount);
+	occlusion = 1.0 - (occlusion / ssaoparams.sampleAmount);
 
 	outColor = occlusion;
 }

@@ -15,24 +15,24 @@
 class CommandBuffers {
 public:
 	CommandBuffers() = default;
-	CommandBuffers(VkDevice device, 
-		std::vector<VkFramebuffer> swapChainFramebuffers, 
+	CommandBuffers(VkDevice device,
+		std::vector<VkFramebuffer> swapChainFramebuffers,
 		VkQueue graphicsQueue,
-		VkCommandPool commandPool, 
+		VkCommandPool commandPool,
 		VkRenderPass SceneRenderPass,
-		VkExtent2D swapChainExtent, 
-		VkPipeline graphicsPipeline, 
-		VkPipeline computePipeline, 
-		VkPhysicalDevice physicalDevice, 
-		VkBuffer renderingBuffer, 
+		VkExtent2D swapChainExtent,
+		VkPipeline graphicsPipeline,
+		VkPipeline computePipeline,
+		VkPhysicalDevice physicalDevice,
+		VkBuffer renderingBuffer,
 		VkBuffer indexBuffer,
 		VkPipelineLayout pipelineLayout,
-		std::vector<VkDescriptorSet> descriptorSets, 
+		std::vector<VkDescriptorSet> descriptorSets,
 		std::vector<Vertex> sceneVertexInformation,
-		VkPipeline shadowPipeline, 
+		VkPipeline shadowPipeline,
 		VkFramebuffer shadowFramebuffer,
 		VkRenderPass shadowRenderPass,
-		VkPipelineLayout shadowPipelineLayout, 
+		VkPipelineLayout shadowPipelineLayout,
 		VkPipeline shadowGraphicsPipeline,
 		std::vector<Vertex> FloorVertexData,
 		VkBuffer FloorRenderBuffer,
@@ -76,7 +76,10 @@ public:
 		VkBuffer CubeMapVertexBuffer,
 		VkBuffer CubeMapIndexBuffer,
 		VkPipeline CubeMapPipeline,
-		VkPipelineLayout CubeMapPipelineLayout);
+		VkPipelineLayout CubeMapPipelineLayout,
+		VE::Tools::GameObjectRenderData HBAORenderData,
+		VE::Tools::GameObjectRenderData AlchemyRenderData);
+
 
 	void createCommandBuffers();
 
@@ -84,6 +87,10 @@ public:
 
 	VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool);
 	void endSingleTimeCommnads(VkCommandBuffer commandBuffer, VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue);
+
+	void RecordCommandBuffers(bool enableHBAO, bool enableCrytekSSAO, bool enableAlchemyAO);
+	void CommandBufferRecording(VkCommandPool commandPool, bool hbao, bool ssao, bool aao);
+
 
 private:
 	std::unique_ptr<Object> GameObjectVertices = std::make_unique<Object>();
@@ -173,5 +180,9 @@ private:
 	std::vector<uint32_t> CubeMapIndex;
 
 	VkCommandBuffer commandBufferImGui;
+
+
+	VE::Tools::GameObjectRenderData HBAORenderData;
+	VE::Tools::GameObjectRenderData AlchemyRenderData;
 
 };

@@ -8,8 +8,9 @@
 class Input {
 public:	
 	Input() = default;
-	Input(GLFWwindow* window, glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp)
-		: window{ window }, cameraPos{ cameraPos }, cameraFront{ cameraFront }, cameraUp{ cameraUp } {}
+	Input(GLFWwindow* window, glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp, bool LockMouse)
+		: window{ window }, cameraPos{ cameraPos }, cameraFront{ cameraFront }, cameraUp{ cameraUp },
+		LockMouse{LockMouse} {}
 
 	Input(const Input& camera) {
 		this->cameraPos = camera.cameraPos;
@@ -25,8 +26,11 @@ public:
 		cameraPos = pos;
 	}
 
-	void setCameraSettings(glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp);
+	void setCameraSettings(glm::vec3 cameraPos, glm::vec3 cameraFront, glm::vec3 cameraUp, bool LockMouse);
 	void mouse_callback(GLFWwindow* window, double xOffset, double yOffset);
+
+	bool isMouseLocked() const { return LockMouse; }
+	void SetMouseLock(bool setLock) { LockMouse = setLock; }
 
 private:
 	glm::vec3 cameraPos;
@@ -40,5 +44,6 @@ private:
 	float lastX = 1920 / 2.0f;
 	float lastY = 1080 / 2.0f;
 	float fov = 45.0f;
+	bool LockMouse;
 };
 

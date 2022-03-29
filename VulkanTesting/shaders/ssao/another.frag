@@ -1,5 +1,4 @@
 #version 450
-// this is my own HBAO shader
 #define PI 3.1415926535897932384626433832795
 
 layout(binding = 3) uniform sampler2D texNoise;
@@ -32,14 +31,16 @@ layout(std140, binding = 4) uniform KernelSample {
     float sampleDirections;
     float num_sample_steps;
     float sampling_step;
-    bool isSSAOOn;
+    bool crytekSSAO;
     float shadowScalar;
     float shadowContrast;
     float depthThreshold;
     int sampleAmount;
     int sampleTurns;
     float ambientLightLevel;
-}kernelsamples;
+    bool HBAO;
+    bool AlchemyAO;
+}ssaoparams;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 uvCoords;
@@ -85,13 +86,13 @@ vec4 GetJitter()
 }
 
 
-#define RADIUS 0.5
-#define NUMBER_OF_SAMPLING_DIRECTIONS 8
-#define STEP 0.004
-#define NUMBER_OF_STEPS 4
-#define TANGENT_BIAS 0.3
+float RADIUS = ssaoparams.radius;
+float NUMBER_OF_SAMPLING_DIRECTIONS = ssaoparams.sampleDirections;
+float STEP = ssaoparams.sampling_step;
+float NUMBER_OF_STEPS = ssaoparams.num_sample_steps;
+float TANGENT_BIAS = 0.3;
+
 #define STRENGTH 2.0
-//0.027 is the preferred radius
 
 float sum = 0.0;
 float occlusion = 0.0;
@@ -99,16 +100,17 @@ float occlusion = 0.0;
 void main()
 {
 
-    // position of current fragment : depth buffer
+    // position of current fragment
     vec3 pos = vec3(vec2(1.0 - uvCoords.x, uvCoords.y), texture(depthMap, vec2(1.0 - uvCoords.x, uvCoords.y)).r);
     
     vec4 normal = depthToNormal(vec2(1.0 - uvCoords.x, uvCoords.y));
     normal.y = -normal.y;
+    normal.x = -normal.x;
 
-    if(!kernelsamples.isSSAOOn)
+/*     if(!ssaoparams.HBAO)
     {
         normal.x = -normal.x;
-    }
+    } */
 
     vec3 NDC_POS = (2.0 * pos) - 1.0; // normalized device coordinates
     vec4 unprojectPosition = inverse(camera.proj) * vec4(NDC_POS, 1.0);
@@ -128,7 +130,6 @@ void main()
         float samplingDirectionAngle = i * samplingDiskDirection;
         //jitter direction
         vec2 samplingDirection = RotateDirection(vec2(cos(samplingDirectionAngle), sin(samplingDirectionAngle)), Rand.xy);
-        //vec2 samplingDirection = rotationMatrix * vec2(cos(samplingDirectionAngle), sin(samplingDirectionAngle));
 
         //tangent angle : inverse cosine 
         float tangentAngle = acos(dot(vec3(samplingDirection, 0.0), normal.xyz)) - (0.5 * PI) + TANGENT_BIAS;
@@ -170,11 +171,12 @@ void main()
             float attenuation = 1 - norm * norm;
 
             occlusion = clamp(attenuation * (sin(horizonAngle) - sin(tangentAngle)), 0.0, 1.0);
-            sum += 1.0 - occlusion * kernelsamples.ambientLightLevel; //control AO darkness
+            sum += 1.0 - occlusion * ssaoparams.ambientLightLevel; //control AO darkness
     }
 
     sum /= NUMBER_OF_SAMPLING_DIRECTIONS;
-
+    
     outColor = vec4(sum, sum, sum, 1.0);
 
 }
+

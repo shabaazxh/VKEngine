@@ -25,7 +25,7 @@ public:
 		m_presentQueue{ presentQueue } {}
 
 
-	void ImGuiInit();
+	void ImGuiInit(std::unique_ptr<VE::VulkanDevice>& vkdevice);
 	void ImGuiSetupWindow();
 
 

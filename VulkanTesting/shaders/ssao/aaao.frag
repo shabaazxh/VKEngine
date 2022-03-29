@@ -41,25 +41,27 @@ layout(std140, binding = 4) uniform KernelSample {
     float sampleDirections;
     float num_sample_steps;
     float sampling_step;
-    bool isSSAOOn;
+    bool crytekSSAO;
     float shadowScalar;
     float shadowContrast;
     float depthThreshold;
     int sampleAmount;
     int sampleTurns;
     float ambientLightLevel;
-}kernelsamples;
+    bool HBAO;
+    bool AlchemyAO;
+}ssaoparams;
 
 layout(location = 0) out vec2 outColor;
 
 const vec2 window = vec2(1920.0, 1080.0);
 const vec2 noiseScale = vec2(1920.0/4.0, 1080.0/4.0);
 
-int n_samples = 64;
-int turns = 12;
-float ball_radius = kernelsamples.radius; //0.425
-float sigma = kernelsamples.shadowScalar;
-float kappa = kernelsamples.shadowContrast;
+int n_samples = ssaoparams.sampleAmount;
+int turns = ssaoparams.sampleTurns;
+float ball_radius = ssaoparams.radius; //0.425
+float sigma = ssaoparams.shadowScalar;
+float kappa = ssaoparams.shadowContrast;
 float beta = 0.0005f;
 float epsilon = 0.0001f;
 

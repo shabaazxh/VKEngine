@@ -16,6 +16,30 @@ layout(binding = 1) uniform Light {
     bool invertedNormals;
 }lightUniform;
 
+layout(std140, binding = 14) uniform KernelSample {
+    mat4 projection;
+    mat4 mvMatrix;
+    vec4 samples[64];
+    vec4 cameraEye;
+    vec4 cameraCenter;
+    float z_far;
+    float radius;
+    float bias;
+    float scale;
+    float sampleDirections;
+    float num_sample_steps;
+    float sampling_step;
+    bool crytekSSAO;
+    float shadowScalar;
+    float shadowContrast;
+    float depthThreshold;
+    int sampleAmount;
+    int sampleTurns;
+    float ambientLightLevel;
+    bool HBAO;
+    bool AlchemyAO;
+}ssaoparams;
+
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
@@ -33,7 +57,8 @@ void main() {
     vec4 worldPos = ubo.model * vec4(inPosition, 1.0);
     FragPos = viewPos.xyz;
     //FragPos = worldPos.xyz;
-
+    
+    
     TexCoords = inTexCoord;
 
     mat3 normalMatrix = transpose(inverse(mat3(ubo.view * ubo.model)));

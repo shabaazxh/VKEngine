@@ -1,6 +1,6 @@
 #include "ImGuiUI.h"
 
-void ImGuiInt::ImGuiInit()
+void ImGuiInt::ImGuiInit(std::unique_ptr<VE::VulkanDevice>& vkdevice)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -10,12 +10,13 @@ void ImGuiInt::ImGuiInit()
 
 	ImGui_ImplGlfw_InitForVulkan(m_window, true);
 
-	VE::VulkanDevice vkdevice(m_surface);
-	VE::QueueFamilyIndices indices = vkdevice.findQueueFamilies(m_physicalDevice);
-
+	//VE::VulkanDevice vkdevice(m_surface);
+	//VE::QueueFamilyIndices indices = vkdevice.findQueueFamilies(m_physicalDevice);
+	VE::QueueFamilyIndices indices = vkdevice->findQueueFamilies(vkdevice->getPhysicalDevice());
+	
 	ImGui_ImplVulkan_InitInfo init_info = {};
 	init_info.Instance = m_instance;
-	init_info.PhysicalDevice = m_physicalDevice;
+	init_info.PhysicalDevice = vkdevice->getPhysicalDevice();
 	init_info.Device = m_device;
 	init_info.Queue = m_graphics;
 	init_info.QueueFamily = indices.graphics.value();

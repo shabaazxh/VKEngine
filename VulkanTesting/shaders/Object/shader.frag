@@ -139,7 +139,7 @@ float shadowResult(vec4 fragPosLightSpace)
 
 void main() {
 
-    vec3 N = normalize(Normal);
+/*     vec3 N = normalize(Normal);
     vec3 V = normalize(camera.cameraPosition - FragPos.xyz);
 
     vec3 Lo = vec3(0.0);
@@ -178,15 +178,15 @@ void main() {
 
     float shadow = shadowResult(FragPosLightSpace);
     vec3 ambient = vec3(0.03) * camera.albedo * camera.ao;
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + Lo + (1.0 - shadow);
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));
+    color = pow(color, vec3(1.0/2.2)); */
 
 
 
 
-/*     float gamma = 2.2;
+    float gamma = 2.2;
 
     vec3 color = vec3(1.0, 1.0, 1.0);
     vec3 normal = normalize(Normal);
@@ -221,7 +221,7 @@ void main() {
     float shadow = shadowResult(FragPosLightSpace);
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
 
-    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma)); */
+    lighting.rgb = pow(lighting.rgb, vec3(1.0/gamma));
 
-    outColor = vec4(color, 1.0);
+    outColor = vec4(lighting, 1.0);
 }

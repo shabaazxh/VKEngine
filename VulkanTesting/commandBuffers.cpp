@@ -62,7 +62,9 @@ CommandBuffers::CommandBuffers(VkDevice device,
 	VkBuffer CubeMapVertexBuffer,
 	VkBuffer CubeMapIndexBuffer,
 	VkPipeline CubeMapPipeline,
-	VkPipelineLayout CubeMapPipelineLayout){
+	VkPipelineLayout CubeMapPipelineLayout,
+	VE::Tools::GameObjectRenderData HBAORenderData,
+	VE::Tools::GameObjectRenderData AlchemyRenderData){
 
 	this->device = device;
 	this->swapChainFramebuffers = swapChainFramebuffers;
@@ -125,6 +127,8 @@ CommandBuffers::CommandBuffers(VkDevice device,
 	this->CubeMapIndexBuffer = CubeMapIndexBuffer;
 	this->CubeMapPipeline = CubeMapPipeline;
 	this->CubeMapPipelineLayout = CubeMapPipelineLayout;
+	this->HBAORenderData = HBAORenderData;
+	this->AlchemyRenderData = AlchemyRenderData;
 }
 
 void CommandBuffers::createCommandBuffers() {
@@ -140,6 +144,10 @@ void CommandBuffers::createCommandBuffers() {
 		throw std::runtime_error("failed to allocate command buffers!");
 	}
 
+}
+
+void CommandBuffers::RecordCommandBuffers(bool enableHBAO, bool enableCrytekSSAO, bool enableAlchemyAO)
+{
 	for (size_t i = 0; i < commandBuffers.size(); i++) {
 
 		VkCommandBufferBeginInfo beginInfo{};
@@ -207,13 +215,13 @@ void CommandBuffers::createCommandBuffers() {
 
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-		
+
 		// Object model
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers3, offsets3);
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(modelIndex.size()), 1, 0, 0, 0);
 		//vkCmdDraw(commandBuffers[i], sceneVertexInformation.size(), 1, 0, 0);
-		
+
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipeline);
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, FloorPipelineLayout, 0, 1, &FloorDescriptorSet[i], 0, nullptr);
 		//Floor model
@@ -221,7 +229,7 @@ void CommandBuffers::createCommandBuffers() {
 		vkCmdBindIndexBuffer(commandBuffers[i], FloorModelIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(FloorModelIndexData.size()), 1, 0, 0, 0);
 		//vkCmdDraw(commandBuffers[i], FloorVertexData.size(), 1, 0, 0);
-		
+
 		// Cube map
 		//vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, CubeMapPipeline);
 		//vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, CubeMapPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
@@ -303,71 +311,76 @@ void CommandBuffers::createCommandBuffers() {
 
 		/** -----------------------------  SSAO QUAD Render -------------------------- */
 
-			VkRenderPassBeginInfo SSAOQuadRenderPassInfo{};
-			SSAOQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			SSAOQuadRenderPassInfo.renderPass = SSAOQuadRenderPass;
-			SSAOQuadRenderPassInfo.framebuffer = SSAOQuadFramebuffer;
-			SSAOQuadRenderPassInfo.renderArea.offset = { 0,0 };
-			SSAOQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+		VkRenderPassBeginInfo SSAOQuadRenderPassInfo{};
+		SSAOQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		SSAOQuadRenderPassInfo.renderPass = SSAOQuadRenderPass;
+		SSAOQuadRenderPassInfo.framebuffer = SSAOQuadFramebuffer;
+		SSAOQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		SSAOQuadRenderPassInfo.renderArea.extent = swapChainExtent;
 
-			std::array<VkClearValue, 2> SSAOQuadClearValues{};
-			SSAOQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
-			SSAOQuadClearValues[1].depthStencil = { 1.0f, 0 };
+		std::array<VkClearValue, 2> SSAOQuadClearValues{};
+		SSAOQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		SSAOQuadClearValues[1].depthStencil = { 1.0f, 0 };
 
-			SSAOQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOQuadClearValues.size());
-			SSAOQuadRenderPassInfo.pClearValues = SSAOQuadClearValues.data();
+		SSAOQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOQuadClearValues.size());
+		SSAOQuadRenderPassInfo.pClearValues = SSAOQuadClearValues.data();
 
-			vkCmdBeginRenderPass(commandBuffers[i], &SSAOQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[i], &SSAOQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			VkBuffer SSAOQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
-			VkDeviceSize SSAOQuadOffSet[] = { 0 };
+		VkBuffer SSAOQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
+		VkDeviceSize SSAOQuadOffSet[] = { 0 };
 
-			if (VE::Tools::enableSSAO)
-			{
-				// SSAO Quad render
-				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipeline);
-				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipelineLayout, 0, 1, &SSAODescriptorSets[i], 0, nullptr);
-				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOQuadVertexBufferArr, SSAOQuadOffSet);
-				vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		// SSAO Quad render
+		if (enableHBAO) 
+		{
+			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, HBAORenderData.graphicsPipeline);
+		}
+		if (enableAlchemyAO)
+		{
+			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, AlchemyRenderData.graphicsPipeline);
+		}
+		if (enableCrytekSSAO) {
+			vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipeline);
+		}
 
-				vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
-			}
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOQuadPipelineLayout, 0, 1, &SSAODescriptorSets[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOQuadVertexBufferArr, SSAOQuadOffSet);
+		vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdEndRenderPass(commandBuffers[i]);
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
+
+		vkCmdEndRenderPass(commandBuffers[i]);
 
 		/** -----------------------------  SSAO Blur QUAD Render -------------------------- */
 
-			VkRenderPassBeginInfo SSAOBlurQuadRenderPassInfo{};
-			SSAOBlurQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			SSAOBlurQuadRenderPassInfo.renderPass = SSAOBlurRenderPass;
-			SSAOBlurQuadRenderPassInfo.framebuffer = SSAOBlurFramebuffer;
-			SSAOBlurQuadRenderPassInfo.renderArea.offset = { 0,0 };
-			SSAOBlurQuadRenderPassInfo.renderArea.extent = swapChainExtent;
+		VkRenderPassBeginInfo SSAOBlurQuadRenderPassInfo{};
+		SSAOBlurQuadRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		SSAOBlurQuadRenderPassInfo.renderPass = SSAOBlurRenderPass;
+		SSAOBlurQuadRenderPassInfo.framebuffer = SSAOBlurFramebuffer;
+		SSAOBlurQuadRenderPassInfo.renderArea.offset = { 0,0 };
+		SSAOBlurQuadRenderPassInfo.renderArea.extent = swapChainExtent;
 
-			std::array<VkClearValue, 1> SSAOBlurQuadClearValues{};
-			SSAOBlurQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		std::array<VkClearValue, 1> SSAOBlurQuadClearValues{};
+		SSAOBlurQuadClearValues[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-			SSAOBlurQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOBlurQuadClearValues.size());
-			SSAOBlurQuadRenderPassInfo.pClearValues = SSAOBlurQuadClearValues.data();
+		SSAOBlurQuadRenderPassInfo.clearValueCount = static_cast<uint32_t>(SSAOBlurQuadClearValues.size());
+		SSAOBlurQuadRenderPassInfo.pClearValues = SSAOBlurQuadClearValues.data();
 
-			vkCmdBeginRenderPass(commandBuffers[i], &SSAOBlurQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffers[i], &SSAOBlurQuadRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			VkBuffer SSAOBlurQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
-			VkDeviceSize SSAOBlurQuadOffSet[] = { 0 };
+		VkBuffer SSAOBlurQuadVertexBufferArr[] = { SSAOQuadVertexBuffer };
+		VkDeviceSize SSAOBlurQuadOffSet[] = { 0 };
 
-			if (VE::Tools::enableSSAO)
-			{
 
-				// SSAO Quad render
-				vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipeline);
-				vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipelineLayout, 0, 1, &SSAOBlurDescriptorSet[i], 0, nullptr);
-				vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOBlurQuadVertexBufferArr, SSAOBlurQuadOffSet);
-				vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+		// SSAO Quad render
+		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipeline);
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, SSAOBlurPipelineLayout, 0, 1, &SSAOBlurDescriptorSet[i], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, SSAOBlurQuadVertexBufferArr, SSAOBlurQuadOffSet);
+		vkCmdBindIndexBuffer(commandBuffers[i], SSAOQuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-				vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
-			}
+		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
 
-			vkCmdEndRenderPass(commandBuffers[i]);
+		vkCmdEndRenderPass(commandBuffers[i]);
 
 		/** -----------------------------  QUAD Render -------------------------- */
 
@@ -394,17 +407,22 @@ void CommandBuffers::createCommandBuffers() {
 		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, QuadPipelineLayout, 0, 1, &sceneDescriptorSets[i], 0, nullptr);
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, QuadVertexBufferArr, QuadOffSet);
 		vkCmdBindIndexBuffer(commandBuffers[i], QuadIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-		
+
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(QuadIndices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffers[i]);
-		
+
 		if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record command buffer!");
 		}
 
 	}
+}
 
+void CommandBuffers::CommandBufferRecording(VkCommandPool commandPool, bool hbao, bool ssao, bool aao)
+{
+	vkResetCommandPool(device, commandPool, 0);
+	RecordCommandBuffers(hbao, ssao, aao);
 }
 
 VkCommandBuffer CommandBuffers::beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool)

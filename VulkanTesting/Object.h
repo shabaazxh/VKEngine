@@ -105,13 +105,15 @@ struct KernelSample {
 	alignas(4) float sampleDirections;
 	alignas(4) float num_sample_steps;
 	alignas(4) float sampling_step;
-	alignas(1) bool isSSAOOn;
+	alignas(1) bool crytekSSAO;
 	alignas(4) float shadowScalar;
 	alignas(4) float shadowContrast;
 	alignas(4) float depthThreshold;
 	alignas(4) int sampleAmount;
 	alignas(4) int sampleTurns;
 	alignas(4) float ambientLightLevel;
+	alignas(1) bool HBAO;
+	alignas(1) bool AlchemyAO;
 };
 
 

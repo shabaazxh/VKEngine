@@ -14,7 +14,9 @@ Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain,
 	std::vector<VkDeviceMemory> Light_2_BufferMemory,
 	std::vector<VkDeviceMemory> SSAOKenrnelBufferMemory,
 	frame::frameData frameInfo,
-	bool frameBufferResized)
+	bool frameBufferResized,
+	bool LockMouse,
+	std::unique_ptr<CommandBuffers> commands)
 {
 
 	this->device = device;
@@ -33,9 +35,10 @@ Renderer::Renderer(VkDevice device, VkSwapchainKHR swapChain,
 	this->window = window;
 	this->frameInfo = frameInfo;
 	this->frameBufferResized = frameBufferResized;
+	cb = std::move(commands);
 
 	Camera = Input(window, glm::vec3(0.0f, 0.0f, -5.0f),
-		glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), LockMouse);
 }
 
 void Renderer::drawFrame() {
@@ -184,8 +187,24 @@ void Renderer::processInput(GLFWwindow* window) {
 		Camera.setCameraPos(currentPosition);
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
-		//lightpos = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+	if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+		
+		if (Camera.isMouseLocked() == false)
+		{
+			
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			Camera.SetMouseLock(true);	
+		}	
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) {
+		
+		if (Camera.isMouseLocked() == true)
+		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			Camera.SetMouseLock(false);
+			
+		}
 	}
 
 }
@@ -244,8 +263,7 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	ubo.roughness = 0.05f;
 	ubo.metallic = 0.5f;
 
-	//glm::vec3(0.5f, .1f, 11.0f),
-	//glm::vec3(0.0f, 0.0f, -1.0f)
+
 	ks.mvMatrix = glm::mat4(ubo.model * ubo.view);
 	ks.cameraEye = glm::vec4(Camera.getCameraPos(), 1.0f);
 	ks.cameraCenter = glm::vec4(Camera.getCameraFront(), 1.0);
@@ -256,22 +274,21 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	ks.sampleDirections = SSAOController.sampleDirections;
 	ks.num_sample_steps = SSAOController.num_sample_steps;
 	ks.sampling_step = SSAOController.sampling_step;
-	ks.isSSAOOn = VE::Tools::enableSSAO;
+	ks.crytekSSAO = SSAOController.enableCrytekSSAO;
 	ks.shadowScalar = SSAOController.shadowScalar;
 	ks.shadowContrast = SSAOController.shadowContrast;
 	ks.depthThreshold = SSAOController.depthThreshold;
 	ks.sampleAmount = SSAOController.sampleAmount;
 	ks.sampleTurns = SSAOController.sampleTurns;
 	ks.ambientLightLevel = SSAOController.ambientLightLevel;
-	//std::cout << "UNIFORM: " << ks.radius << std::endl;
-	//std::cout << "VALUE: " << radius << std::endl;
-
+	ks.HBAO = SSAOController.enableHBAO;
+	ks.AlchemyAO = VE::Tools::enableAlchemyAO;
 
 	// Handling Lighting
 	Light lighting{};
 	lighting.position = SSAOController.lightPosition;
-	lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-	lighting.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+	//lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+	//lighting.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
 	//lighting.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
 	//lighting.position.y = 1.0f + sin(glfwGetTime() / 2.0f) * 1.0f;
 	//lighting.position.z = 1.0f + sin(glfwGetTime() / 2.0f) * 1.0f;
@@ -285,9 +302,9 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 
 	Light Light_2{};
 	Light_2.position = glm::vec4(SSAOController.lightPosition);
-	Light_2.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
-	Light_2.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
-	Light_2.position.z = 1.0f + sin(glfwGetTime()) * 2.0f;
+	//Light_2.position.x = 1.0f + sin(glfwGetTime()) * 2.0f;
+	//Light_2.position.y = sin(glfwGetTime() / 2.0f) * 1.0f;
+	//Light_2.position.z = 1.0f + sin(glfwGetTime()) * 2.0f;
 	Light_2.lightColor = glm::vec4(0.0, 1.0f, 0.0, 1.0); //0.5f, 0.5f, 0.5f, 1.0
 	Light_2.objectColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	Light_2.viewPos = glm::vec4(Camera.getCameraPos(), 0.0f);
@@ -323,6 +340,10 @@ void Renderer::updateUniformBuffers(uint32_t currentImage)
 	vkUnmapMemory(device, SSAOKenrnelBufferMemory[currentImage]);
 
 }
+bool prevState = false;
+bool isHBAOCurrentState = false;
+bool isCrytekSSAOCurrentState = false;
+bool isAlchemyAOCurrentState = false;
 
 void Renderer::updateCommandBuffer(uint32_t currentImage)
 {
@@ -331,32 +352,94 @@ void Renderer::updateCommandBuffer(uint32_t currentImage)
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+	
+	static bool MenuWindow = true;
+	static bool EnableHBAO = false;
 
-	static bool windowOpened = true;
-	static bool showDemoWindow = false;
-	if (windowOpened)
+	if (MenuWindow)
 	{
-		ImGui::Begin("Rendertime", &windowOpened, 0);
+		ImGui::Begin("Ambient Occlusion Settings", &MenuWindow, 0);
 		ImGui::Text("Frametime: %f", 1000.0f / ImGui::GetIO().Framerate);
-		ImGui::Checkbox("Show ImGui demo window", &showDemoWindow);
-		ImGui::Checkbox("Show current window", &windowOpened);
-		ImGui::Checkbox("Enable SSAO", &VE::Tools::enableSSAO);
-		ImGui::SliderFloat("Radius: ", &SSAOController.radius, 0.0f, 10.0f);
-		//ImGui::SliderFloat("Bias: ", &SSAOController.tangent_bias, 0.0f, 1.0f);
-		ImGui::SliderFloat("shadowScalar", &SSAOController.shadowScalar, 0.0f, 1.0f);
-		ImGui::SliderFloat("shadowContrast", &SSAOController.shadowContrast, 0.0f, 1.0f);
-		//ImGui::SliderFloat("depthThreshold", &SSAOController.depthThreshold, 0.000f, 0.001f);
-		//ImGui::SliderInt("samples", &SSAOController.sampleAmount, 0, 200);
-		ImGui::SliderFloat("ambientLightLevel", &SSAOController.ambientLightLevel, 0.0f, 10.0f);
-		//ImGui::SliderFloat4("LightZ: ", (float*)&SSAOController.lightPosition, -10.0f, 10.0f);+
-		//ImGui::SliderInt("sampleTurns", &SSAOController.sampleTurns, 0, 64);
-		//ImGui::SliderFloat("Tangent Bias: ", &SSAOController.tangent_bias, 0.2f, 0.3f);
-		//ImGui::SliderFloat("Scale: ", &SSAOController.scale, 0.0f, 20.0f);
-		ImGui::SliderFloat("Sample directions: ", &SSAOController.sampleDirections, 0.0f, 32.0f);
-		ImGui::SliderFloat("Sample steps: ", &SSAOController.sampling_step, 0.000f, 0.09f);
-		ImGui::SliderFloat("Number Sample steps: ", &SSAOController.num_sample_steps, 0.0f, 32.0f);
+		ImGui::Text("[L] to lock camera : [U] to unlock camera");
+		ImGui::SliderFloat4("LIGHT CONTROLS: ", (float*)&SSAOController.lightPosition, -10.0f, 10.0f);
+		
+
+		if (VE::Tools::enableHBAO)
+		{
+			if (VE::Tools::enableSSAO == true) { VE::Tools::enableSSAO = false; }
+			else if (VE::Tools::enableAlchemyAO == true) { VE::Tools::enableAlchemyAO = false; }
+			else { prevState = false; }
+
+			
+			if (isHBAOCurrentState != true)
+			{
+				cb->CommandBufferRecording(commandPool, VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+				isHBAOCurrentState = true;
+			}
+			ImGui::SliderFloat("Radius: ", &SSAOController.radius, 0.0f, 10.0f);
+			ImGui::SliderInt("samples", &SSAOController.sampleAmount, 0, 200);
+			ImGui::SliderFloat("ambientLightLevel", &SSAOController.ambientLightLevel, 0.0f, 10.0f);
+			ImGui::SliderFloat("Sample directions: ", &SSAOController.sampleDirections, 0.0f, 32.0f);
+			ImGui::SliderFloat("Sample steps: ", &SSAOController.sampling_step, 0.000f, 0.09f);
+			ImGui::SliderFloat("Number Sample steps: ", &SSAOController.num_sample_steps, 0.0f, 32.0f);
+			ImGui::SliderFloat("Tangent Bias: ", &SSAOController.tangent_bias, 0.2f, 0.3f);
+		}
+
+		if (VE::Tools::enableAlchemyAO)
+		{
+			if (VE::Tools::enableSSAO == true) { VE::Tools::enableSSAO = false; }
+			if (isHBAOCurrentState == true) { isHBAOCurrentState = false; }
+			if (isCrytekSSAOCurrentState == true) { isCrytekSSAOCurrentState = false; }
+
+			if (VE::Tools::enableHBAO == true) { VE::Tools::enableHBAO = false; }
+			else { prevState = false; }
+
+			
+			if (isAlchemyAOCurrentState != true)
+			{
+				cb->CommandBufferRecording(commandPool, VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+				isAlchemyAOCurrentState = true;
+			}
+			prevState = VE::Tools::enableAlchemyAO;
+			
+			ImGui::SliderFloat("Radius: ", &SSAOController.radius, 0.0f, 10.0f);
+			ImGui::SliderInt("samples", &SSAOController.sampleAmount, 0, 200);
+			ImGui::SliderFloat("shadowScalar", &SSAOController.shadowScalar, 0.0f, 1.0f);
+			ImGui::SliderFloat("shadowContrast", &SSAOController.shadowContrast, 0.0f, 1.0f);
+			ImGui::SliderFloat("ambientLightLevel", &SSAOController.ambientLightLevel, 0.0f, 10.0f);
+			ImGui::SliderInt("sampleTurns", &SSAOController.sampleTurns, 0, 64);
+		}
+
+		if (VE::Tools::enableSSAO)
+		{
+			if (VE::Tools::enableHBAO == true) { VE::Tools::enableHBAO = false; }
+			if (VE::Tools::enableAlchemyAO == true) { VE::Tools::enableAlchemyAO = false; }
+
+			if (isHBAOCurrentState == true) { isHBAOCurrentState = false; }
+			if (isAlchemyAOCurrentState == true) { isAlchemyAOCurrentState = false; }
+
+			else { prevState = false; }
+
+			
+			if (isCrytekSSAOCurrentState != true)
+			{
+				cb->CommandBufferRecording(commandPool, VE::Tools::enableHBAO, VE::Tools::enableSSAO, VE::Tools::enableAlchemyAO);
+				isCrytekSSAOCurrentState = true;
+			}
+			prevState = VE::Tools::enableSSAO;
+			
+			ImGui::SliderFloat("Radius: ", &SSAOController.radius, 0.0f, 10.0f);
+			ImGui::SliderInt("samples", &SSAOController.sampleAmount, 0, 200);
+		}
+
+		ImGui::Checkbox("HBAO", &VE::Tools::enableHBAO);
+		ImGui::Checkbox("Alchemy AO", &VE::Tools::enableAlchemyAO);
+		ImGui::Checkbox("Crytek SSAO", &VE::Tools::enableSSAO);
+
 		ImGui::End();
+
 	}
+
 
 	ImGui::Render();
 	ImDrawData* main_draw_data = ImGui::GetDrawData();

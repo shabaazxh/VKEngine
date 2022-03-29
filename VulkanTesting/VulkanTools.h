@@ -11,7 +11,13 @@ namespace VE {
 	
 	namespace Tools {
 
-		static bool enableSSAO = true;
+		static bool enableSSAO;
+		static bool enableHBAO;
+		static bool enableAlchemyAO;
+
+		struct GameObjectRenderData {
+			VkPipeline graphicsPipeline;
+		};
 				
 	}
 

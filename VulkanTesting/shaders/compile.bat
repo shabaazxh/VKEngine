@@ -25,8 +25,6 @@ C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/V
 
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/VK.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/VK.frag.spv
 
-C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aao.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aao.frag.spv
-
 C:/VulkanSDK/1.2.176.1/Bin/glslc.exe C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aog.frag -o C:/Users/Shahb/source/repos/VulkanTesting/VulkanTesting/shaders/ssao/aog.frag.spv
 
 pause

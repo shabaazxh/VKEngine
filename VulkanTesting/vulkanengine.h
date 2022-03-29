@@ -90,6 +90,9 @@ namespace VE {
 		std::unique_ptr<Renderer> renderer;
 
 		std::unique_ptr<Pipeline>  SSAOQuadPipeline;
+		std::unique_ptr<Pipeline> HBAOQuadPipeline;
+		std::unique_ptr<Pipeline> AlchemyAOQuadPipeline;
+
 		std::unique_ptr<Pipeline>  SSAOBlurPipeline;
 		std::unique_ptr<Pipeline>  QuadPipeline;
 		std::unique_ptr<Pipeline>  MainModelPipeline;
